@@ -13,4 +13,7 @@
      (insert-file-contents (compute-input-name day part type))
      (buffer-substring-no-properties (point-min) (point-max)))))
 
+(defun read-problem-numbers (day part type)
+  (-map #'string-to-number (read-problem-lines day part type)))
+
 (provide 'advent-utils)
