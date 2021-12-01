@@ -13,4 +13,4 @@
             :to-be 5))
   (it "solves the second part of the problem"
     (expect (day1/part-2 (read-problem-numbers 1 1 :problem))
-            :to-be 42)))
+            :to-be 1275)))

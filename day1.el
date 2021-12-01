@@ -14,6 +14,6 @@
   (count-increases (car input) (cdr input)))
 
 (defun day1/part-2 (input)
-  (error "Not implemented"))
+  (day1/part-1 (--map (apply #'+ it) (-partition-in-steps 3 1 input))))
 
 (provide 'day1)
