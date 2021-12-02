@@ -1,0 +1,29 @@
+
+My solutions for the Advent of Code 2021, in Emacs LISP (or this is the plan. Let's see how it unfolds…)
+
+** How to install the code
+
+Just clone the repository: it doesn't require any setup at all.
+
+** What do you need
+
+- Emacs (obviously) with the following packages installed:
+  - buttercup
+  - dash
+- make (optionally)
+
+** How to run the samples
+
+You can either just type:
+
+#+begin_src shell
+make
+#+end_src
+
+if you have it, or you can manually run:
+
+#+begin_src shell
+emacs --eval "(setq load-path (cons \".\" load-path))" -batch -f package-initialize -f buttercup-run-discover
+#+end_src
+
+if you don't .
