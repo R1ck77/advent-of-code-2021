@@ -1,3 +1,4 @@
+(require 'cl)
 
 (defun compute-input-name (day type)
   (format (cond
