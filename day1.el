@@ -1,17 +1,17 @@
 (require 'dash)
 (require 'advent-utils)
 
-(defun count-increases (start list)
-  (let ((count 0))
-    (while list
-      (if (> (car list) start)
-          (setq count (1+ count)))
-      (setq start (car list))
-      (setq list (cdr list)))
-    count))
+;;; TODO/FIXME this is a reduce
+(defun count-depth-increment (acc value)
+  (let ((start (car acc))
+        (count (cadr acc)))
+   (if (> value start)
+       (setq count (1+ count)))
+   (list value count)))
 
 (defun day1/part-1 (input)
-  (count-increases (car input) (cdr input)))
+  (cadr
+   (-reduce-from #'count-depth-increment (list (car input) 0) (cdr input))))
 
 (defun day1/part-2 (input)
   (day1/part-1 (--map (apply #'+ it) (-partition-in-steps 3 1 input))))
