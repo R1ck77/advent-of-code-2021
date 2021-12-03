@@ -15,7 +15,10 @@ The list has least significant bits first."
     sum))
 
 (defun day3/complement (bits)
-  (--map (- 1 it) bits))
+  (--map (if (eq it :tie)
+             :tie
+           (- 1 it))
+         bits))
 
 (defun day3/sum-lists (acc value)
   (--map (+ (car it) (cdr it))
@@ -28,9 +31,12 @@ The list has least significant bits first."
                  bits-list))
 
 (defun day3/get-moda-on-bits (bits-list)
-  (let ((threshold (/ (length bits-list) 2)))
-   (--map (if (> it threshold) 1 0)
-          (day3/count-ones bits-list))))
+  (let ((total (length bits-list) ))
+    (--map (cond
+            ((> it (- total it)) 1)
+            ((< it (- total it)) 0)
+            (t :tie)) 
+           (day3/count-ones bits-list))))
 
 (defun day3/get-bits (line)
   "Get a list of bits from a line in least significant bits order first"
@@ -45,9 +51,37 @@ The list has least significant bits first."
   (let ((moda (day3/get-moda-on-bits (day3/read-bits-list input))))
     (let ((gamma-rate (day3/bits-to-number moda))
           (epsilon-rate (day3/bits-to-number (day3/complement moda))))
-     (* gamma-rate epsilon-rate))))
+      (* gamma-rate epsilon-rate))))
+
+(defun day3/compute-advanced-coefficient (bits-list selection-function)
+  (let ((current-bit (length (car bits-list))))
+    (while (> (length bits-list) 1)
+      (setq current-bit (1- current-bit))
+      (let* ((selection-value (funcall selection-function bits-list current-bit)))
+        (setq bits-list (--filter (= (elt it current-bit) selection-value)
+                                  bits-list))))
+    (day3/bits-to-number (car bits-list))))
+
+(defun day3/oxygen-generator-rating-bit-criteria (bits-list index)
+  (let ((raw-value (elt (day3/get-moda-on-bits bits-list) index)))
+    (if (eq :tie raw-value)
+        1
+      raw-value)))
+
+(defun day3/compute-oxygen-generator-rating (bits-list)
+  (day3/compute-advanced-coefficient bits-list #'day3/oxygen-generator-rating-bit-criteria))
+
+(defun day3/co2-scrubber-bit-criteria (bits-list index)
+  (let ((raw-value (elt (day3/complement (day3/get-moda-on-bits bits-list)) index)))
+    (if (eq :tie raw-value) 0 raw-value)))
+
+(defun day3/compute-co2-scrubber-rating (bits-list)
+  (day3/compute-advanced-coefficient bits-list #'day3/co2-scrubber-bit-criteria))
 
 (defun day3/part-2 (input)
-  (error "Not yet implemented"))
+  (let ((bits-list (day3/read-bits-list input)))
+    (let ((oxygen-generator-rating (day3/compute-oxygen-generator-rating bits-list))
+          (co2-scrubber-rating (day3/compute-co2-scrubber-rating bits-list)))
+      (* oxygen-generator-rating co2-scrubber-rating))))
 
 (provide 'day3)
