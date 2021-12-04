@@ -12,7 +12,7 @@
   (describe "part 2"
     (it "replicates the example"
       (expect (day4/part-2 (advent/read-blocks-of-lines 4 :example))
-              :to-be 230))
-    (xit "solves the problem"
+              :to-be 1924))
+    (it "solves the problem"
       (expect (day4/part-2 (advent/read-blocks-of-lines 4 :problem))
-              :to-be 4550283))))
+              :to-be 16830))))
