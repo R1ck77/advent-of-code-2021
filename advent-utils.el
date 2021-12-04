@@ -47,8 +47,7 @@
         (reverse (cons (reverse (cadr accumulated)) (car accumulated)))
       (reverse (car accumulated)))))
 
-(defun read-blocks-of-lines (day type)
-  (group-lines (advent/read-raw-problem-lines day type))
-  )
+(defun advent/read-blocks-of-lines (day type)
+  (advent/group-lines (advent/read-raw-problem-lines day type)))
 
 (provide 'advent-utils)
