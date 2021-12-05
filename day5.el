@@ -14,6 +14,19 @@
 (defun day5/read-vents (lines)
   (-map #'day5/line-to-points lines))
 
+(defun day5/diagonal-trace (line)  
+  (let ((start (car line))
+        (end (cadr line)))
+    (let ((steps (1+
+                  (max (abs (- (car end) (car start)))
+                       (abs (- (cdr end) (cdr start))))))
+            (dx (signum (- (car end) (car start))))
+            (dy (signum (- (cdr end) (cdr start)))))
+        (--iterate (cons (+ (car it) dx)
+                         (+ (cdr it) dy))
+                   start
+                   steps))))
+
 (defun day5/vertical? (line)
   (= (car (car line))
      (car (cadr line))))
@@ -22,53 +35,21 @@
   (= (cdr (car line))
      (cdr (cadr line))))
 
-(defun day5/row-trace (line)
-  (let ((start (car line))
-        (end (cadr line)))
-    (if (< (car end) (car start))
-        (day5/row-trace (list end start))
-      (let ((row (cdr end)))
-        (--map (cons it row)
-               (number-sequence (car start) (car end)))))))
-
-(defun day5/column-trace (line)
-  (let ((start (car line))
-        (end (cadr line)))
-    (if (< (cdr end) (cdr start))
-        (day5/column-trace (list end start))
-      (let ((column (car end)))
-        (--map (cons column it)
-               (number-sequence (cdr start) (cdr end)))))))
-
-(defun day5/compute-manhattan-trace (line)
-  (cond
-   ((day5/vertical? line) (day5/column-trace line))
-   ((day5/horizontal? line) (day5/row-trace line))))
-
-(defun day5/diagonal-trace (line)  
-  (let ((start (car line))
-        (end (cadr line)))
-    (if (< (car end) (car start))
-        (day5/diagonal-trace (list end start))
-      (let ((row (cdr end))
-            (dy (signum (- (cdr end) (cdr start)))))
-        (--iterate (cons (1+ (car it))
-                         (+ (cdr it) dy))
-                   start
-                   (1+ (- (car end) (car start))))))))
+(defun day5/aligned? (line)
+  (or (day5/vertical? line)
+      (day5/horizontal? line)))
 
 (defun day5/compute-trace (line)
-  (or (day5/compute-manhattan-trace line)
-      (day5/diagonal-trace line)))
+  (day5/diagonal-trace line))
 
 (defun day5/write-trace-on-table (table point)
   (let ((current-value (advent/get table point 0)))
     (advent/put table point (1+ current-value))
     table))
 
-(defun day5/accumulate-vents-on-table (vents trace-f)
+(defun day5/accumulate-vents-on-table (vents)
   (let ((table (advent/table)))
-    (--each (-map trace-f vents)
+    (--each (-map #'day5/compute-trace vents)
       (-reduce-from #'day5/write-trace-on-table table it))
     table))
 
@@ -82,12 +63,10 @@
 
 (defun day5/part-1 (lines)
   (day5/count-dangerous-places
-   (day5/accumulate-vents-on-table (day5/read-vents lines)
-                                   #'day5/compute-manhattan-trace)))
+   (day5/accumulate-vents-on-table (-filter #'day5/aligned? (day5/read-vents lines)))))
 
 (defun day5/part-2 (lines)
   (day5/count-dangerous-places
-   (day5/accumulate-vents-on-table (day5/read-vents lines)
-                                   #'day5/compute-trace)))
+   (day5/accumulate-vents-on-table (day5/read-vents lines))))
 
 (provide 'day5)

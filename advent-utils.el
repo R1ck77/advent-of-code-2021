@@ -1,6 +1,10 @@
 (require 'cl)
 (require 'dash)
 
+(defmacro comment (&rest x)
+  "Important (and missed…) enough to warrant a global-like name"
+  nil)
+
 (defun advent/goto (x y)
   (goto-char 0)
   (move-to-column x t)
