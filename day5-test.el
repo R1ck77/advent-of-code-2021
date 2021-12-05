@@ -13,6 +13,6 @@
     (it "replicates the example"
       (expect (day5/part-2 (advent/read-problem-lines 5 :example))
               :to-be 12))
-    (xit "solves the problem"
+    (it "solves the problem"
       (expect (day5/part-2 (advent/read-problem-lines 5 :problem))
-              :to-be 42))))
+              :to-be 19929))))
