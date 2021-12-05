@@ -1,5 +1,6 @@
 (require 'dash)
 (require 'advent-utils)
+(require 'advent-extra-utils)
 
 (defun day5/read-point (point-as-string)
   (let ((tokens (split-string point-as-string "," t)))
@@ -68,5 +69,63 @@
 (defun day5/part-2 (lines)
   (day5/count-dangerous-places
    (day5/accumulate-vents-on-table (day5/read-vents lines))))
+
+;;; The following code shows the traces on a buffer (second part only)
+
+(defun day5/bump--value (x y)
+  (advent/goto x y)
+  (let ((here (point)))
+   (if (= (line-end-position) here)
+       (insert "1")
+     (let ((current-raw-value (buffer-substring-no-properties here (1+ here))))
+       (delete-char 1)
+       (cond
+        ((string= "*" current-raw-value) (insert "*"))
+        ((string= " " current-raw-value) (insert "1"))
+        (t (let ((current-value (string-to-number current-raw-value)))
+           (if (= current-value 9)
+               (insert "*")
+             (insert (number-to-string (1+ current-value)))))))))))
+
+(defun day5/accumulate--trace-on-buffer (trace)
+  (--each trace
+    (day5/bump--value (car it) (cdr it))))
+
+(defun day5/reserve--space (max)
+  "Reserve a rectangle on the screen big enough to contain all traces
+
+It accounts for the different coordinates between buffer and vents"
+  (save-excursion
+    (advent/goto (1+ (car max)) (1+ (cdr max))))
+  max)
+
+(defun day5/compute--traces-boundary (all-traces)
+  "Return the size of the minimum rectangle containing all traces"
+  (--reduce-from (cons (max (car acc) (car it))
+                       (max (cdr acc) (cdr it)))
+                 '(0 . 0) (-flatten all-traces)))
+
+(defun day5/accumulate--vents-on-buffer (vents)
+  "Write the intersections in the current buffer"
+  (let* ((all-traces (-map #'day5/compute-trace vents))
+         (bounds (day5/compute--traces-boundary all-traces)))
+    (day5/reserve--space bounds)
+    (save-excursion
+     (-each all-traces #'day5/accumulate--trace-on-buffer))))
+
+(defun day5/show-intersections (lines)
+  (let ((buffer (get-buffer-create "* Day 5 sample output *")))
+    (switch-to-buffer buffer)
+    (erase-buffer)
+    (day5/accumulate--vents-on-buffer (day5/read-vents lines))))
+
+(defun day5/show-part2-example ()
+  (interactive)
+  (day5/show-intersections (advent/read-problem-lines 5 :example)))
+
+(defun day5/show-part2-problem ()
+  "This operation may take some time (around a minute)"
+  (interactive)
+  (day5/show-intersections (advent/read-problem-lines 5 :problem)))
 
 (provide 'day5)
