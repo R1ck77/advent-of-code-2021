@@ -1,7 +1,6 @@
 (require 'dash)
 (require 'advent-utils)
 
-;;; TODO/FIXME this is a reduce
 (defun count-depth-increment (acc value)
   (let ((start (car acc))
         (count (cadr acc)))
