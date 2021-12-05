@@ -14,16 +14,58 @@ Just clone the repository: it doesn't require any setup at all.
 
 ** How to run the samples
 
-You can either just type:
+The code is organized in "day" files representing the solutions of each part of a specific day, each one contains 2 functions computing the solution for the first part and the second part, like:
+
+#+begin_src elisp
+(day/part-1 blocks)
+#+end_src elisp
+
+or 
+
+#+begin_src elisp
+(day5/part-2 lines)
+#+end_src elisp
+
+where the first require blocks of lines and the second a single list of lines.
+
+This inconsistency in the type of the argument was introduced for my convenience, anyway the input format is always simple and can be deducted from the argument name or the test:  it's usually lines, numbers or block of lines.
+
+There are buttercup tests that will the solution of each day against the problem input sample and my own input.
+
+To run the tests which ensure that all solutions reproduce the expected results you can either type:
 
 #+begin_src shell
 make
 #+end_src
 
-if you have it, or you can manually run:
+if you have make installed, otherwise you can execute:
 
 #+begin_src shell
 emacs --eval "(setq load-path (cons \".\" load-path))" -batch -f package-initialize -f buttercup-run-discover
 #+end_src
 
-if you don't .
+This can be useful if you want to compute the solution against your own input, in which case you need to replace the corresponding file(s) in the =data= directory: the test will show an error in the tests corresponding to the new data and you will get a message that tells how the solution for my input (the expected value) differs from the actual value (the 
+solution of your problem).
+
+*** Day 5
+
+As a bonus, =day5.el= defines two commands: =day5/show-part2-example= and =day5/show-part2-problem=.
+
+Executing them will reproduce the input for the example (small fast) and the problem (very large and slow) in an emacs buffer.
+
+In the first case, it should print:
+
+#+begin_example
+1 1    11
+ 111   2
+  2 1 111
+   1 2 2
+ 112313211
+   1 2
+  1   1
+ 1     1
+1       1
+222111          
+#+end_example
+
+where in the second one, a very large buffer will contain my own input.
