@@ -1,6 +1,20 @@
 (require 'cl)
 (require 'dash)
 
+(defun advent/goto (x y)
+  (goto-char 0)
+  (move-to-column x t)
+  (picture-move-down y))
+
+(defun advent/table ()
+  (make-hash-table :test #'equal))
+
+(defun advent/put (table key value)
+  (puthash key value table))
+
+(defun advent/get (table key &optional default)
+  (gethash key table default))
+
 (defun advent/compute-input-name (day type)
   (format (cond
            ((eq type :example)
