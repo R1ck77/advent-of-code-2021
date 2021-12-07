@@ -90,4 +90,22 @@ WARNING: nil values are not properly supported!"
 (defun advent/read-blocks-of-lines (day type)
   (advent/group-lines (advent/read-raw-problem-lines day type)))
 
+(defun advent/bogus-gradient (start end f)
+  "A getto gradient function that bisects through the domain"
+  (if (< (- end start) 2)
+      (let ((start-value (funcall f start))
+            (end-value (funcall f end)))
+        (if (> end-value start-value)
+            (cons start start-value)
+          (cons end end-value)))
+    (let ((center (floor (/ (+ end start) 2))))
+      (let ((center-val (funcall f center))
+                (right-val (funcall f (1+ center))))
+            (cond
+             ((> right-val center-val)
+              (advent/bogus-gradient start center f))
+             ((< right-val center-val)
+              (advent/bogus-gradient center end f))
+             (t (error "This is weird…")))))))
+
 (provide 'advent-utils)

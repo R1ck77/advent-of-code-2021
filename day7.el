@@ -34,9 +34,11 @@ smarter one would be to figure the cost-formula out…"
   (abs (- p1 p2)))
 
 (defun day7/compute-most-efficient-displacement-cost (crabs cost-formula)
-  (cdar
-   (-sort #'day7/compare--costs
-          (day7/compute-all-costs crabs cost-formula))))
+  (let ((binned-crabs (day7/bin-crabs crabs)))
+   (cdr (advent/bogus-gradient (apply #'min crabs)
+                           (apply #'max crabs)
+                           (lambda (displacement)
+                             (day7/compute-displacement-cost binned-crabs displacement cost-formula))))))
 
 (defun day7/part-1 (crabs)
   (day7/compute-most-efficient-displacement-cost crabs #'day7/simple-displacement-cost))
