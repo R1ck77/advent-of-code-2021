@@ -14,6 +14,24 @@
 (defun advent/get (table key &optional default)
   (gethash key table default))
 
+(defun advent/update (table key f &optional default)
+  "Update the table using the result of f that accepts the key and the old value (or default).
+
+Returns the new value.
+
+WARNING: nil values are not properly supported!"
+  (let* ((old-value (advent/get table key))
+         (new-value (funcall f key (or old-value default))))    
+    (advent/put table key new-value)
+    new-value))
+
+(defun advent/iterate (f initial-value n)
+  (let ((value initial-value))
+   (while (> n 0)
+     (setq value (funcall f value))
+     (setq n (1- n)))
+   value))
+
 (defun advent/compute-input-name (day type)
   (format (cond
            ((eq type :example)
