@@ -1,10 +1,6 @@
 (require 'dash)
 (require 'advent-utils)
 
-;;; extract
-(defun day7/read-crabs (line)
-  (-map #'string-to-number (split-string line "," t)))
-
 (defun day7/compute-displacement-cost (bins destination cost-formula)
   (let ((cost 0))
     (maphash (lambda (pos count)
@@ -40,19 +36,16 @@ smarter one would be to figure the cost-formula out…"
 (defun day7/compute-most-efficient-displacement-cost (crabs cost-formula)
   (cdar
    (-sort #'day7/compare--costs
-          (day7/compute-all-costs (day7/read-crabs line)
-                                  cost-formula))))
+          (day7/compute-all-costs crabs cost-formula))))
 
-(defun day7/part-1 (line)
-  (day7/compute-most-efficient-displacement-cost (day7/read-crabs line)
-                                                 #'day7/simple-displacement-cost))
+(defun day7/part-1 (crabs)
+  (day7/compute-most-efficient-displacement-cost crabs #'day7/simple-displacement-cost))
 
 (defun day7/advanced-displacement-cost (p1 p2)
   (let ((tmp (abs (- p1 p2))))
     (/ (* tmp (1+ tmp)) 2)))
 
-(defun day7/part-2 (line)
-  (day7/compute-most-efficient-displacement-cost (day7/read-crabs line)
-                                                 #'day7/advanced-displacement-cost))
+(defun day7/part-2 (crabs)
+  (day7/compute-most-efficient-displacement-cost crabs #'day7/advanced-displacement-cost))
 
 (provide 'day7)

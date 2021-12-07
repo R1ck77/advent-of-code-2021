@@ -52,6 +52,12 @@ WARNING: nil values are not properly supported!"
 (defun advent/read-problem-lines (day type)
   (split-string (advent/read-problem-text day type) "\n" t))
 
+(defun advent/read-problem-numbers-line (day type)
+  (-map #'string-to-number
+        (split-string (car (advent/read-problem-lines day type))
+                      ","
+                      t)))
+
 (defun advent/read-problem-numbers (day type)
   (-map #'string-to-number (advent/read-problem-lines day type)))
 

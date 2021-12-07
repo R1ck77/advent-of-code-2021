@@ -1,9 +1,6 @@
 (require 'dash)
 (require 'advent-utils)
 
-(defun day6/read-fishes (line)
-  (-map #'string-to-number (split-string line "," t)))
-
 (defun day6/create-empty-counter ()
   "Create a counter with all slots reset to 0"
   (make-vector 9 0))
@@ -40,16 +37,16 @@
 (defun day6/count-fishes (counter)
   (apply #'+ (append counter nil)))
 
-(defun day6/part-1 (line)
+(defun day6/part-1 (numbers)
   (day6/count-fishes
    (advent/iterate #'day6/evolve
-                   (day6/bin-fishes (day6/read-fishes line))
+                   (day6/bin-fishes numbers)
                    80)))
 
-(defun day6/part-2 (line)
+(defun day6/part-2 (numbers)
   (day6/count-fishes
    (advent/iterate #'day6/evolve
-                   (day6/bin-fishes (day6/read-fishes line))
+                   (day6/bin-fishes numbers)
                    256)))
 
 (provide 'day6)
