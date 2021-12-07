@@ -5,8 +5,18 @@
 (defun day7/read-crabs (line)
   (-map #'string-to-number (split-string line "," t)))
 
-(defun day7/compute-displacement-cost (crabs pos cost-formula)
-  (apply #'+ (--map (funcall cost-formula pos it) crabs)))
+(defun day7/compute-displacement-cost (bins destination cost-formula)
+  (let ((cost 0))
+    (maphash (lambda (pos count)
+               (setq cost (+ cost(* count (funcall cost-formula pos destination)))))
+             bins)
+    cost))
+
+(defun day7/bin-crabs (crabs)
+  "Save the number of crabs at each position in a table"
+  (let ((bins (advent/table)))
+    (--each crabs (advent/put bins it (1+ (advent/get bins it 0))))
+    bins))
 
 (defun day7/compute-all-costs (crabs cost-formula)
   "It naively computes the cost by adding the cost of each crab.
@@ -14,8 +24,9 @@
 A smarter approach would be to bin the crabs first, an even
 smarter one would be to figure the cost-formula out…"
   (let ((min-pos (apply #'min crabs))
-        (max-pos (apply #'max crabs)))
-    (--map (cons it (day7/compute-displacement-cost crabs it cost-formula))
+        (max-pos (apply #'max crabs))
+        (binned-crabs (day7/bin-crabs crabs)))
+    (--map (cons it (day7/compute-displacement-cost binned-crabs it cost-formula))
            (number-sequence min-pos max-pos))))
 
 (defun day7/compare--costs (cons-a cons-b)
