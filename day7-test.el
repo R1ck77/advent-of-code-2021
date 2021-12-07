@@ -9,10 +9,10 @@
     (it "solves the problem"
       (expect (day7/part-1 (car (advent/read-problem-lines 7 :problem)))
               :to-be 342730)))
-  (xdescribe "part 2"
+  (describe "part 2"
     (it "replicates the example"
       (expect (day7/part-2 (car (advent/read-problem-lines 7 :example)))
-              :to-be 42))
-    (xit "solves the problem"
+              :to-be 168))
+    (it "solves the problem"
       (expect (day7/part-2 (car (advent/read-problem-lines 7 :problem)))
-              :to-be 42))))
+              :to-be 92335207))))
