@@ -14,14 +14,16 @@
 (defun advent/get (table key &optional default)
   (gethash key table default))
 
-(defun advent/update (table key f &optional default)
+(defun advent/update (table key f &optional default &rest other)
   "Update the table using the result of f that accepts the key and the old value (or default).
+
+\"other\" is appended to the list of arguments of f, if present
 
 Returns the new value.
 
 WARNING: nil values are not properly supported!"
   (let* ((old-value (advent/get table key))
-         (new-value (funcall f key (or old-value default))))    
+         (new-value (apply f (cons key (cons (or old-value default) other)))))
     (advent/put table key new-value)
     new-value))
 
@@ -32,6 +34,7 @@ WARNING: nil values are not properly supported!"
      (setq n (1- n)))
    value))
 
+;;; TODO/FIXME create an anaphoric version and use it in day6
 (defun advent/compute-input-name (day type)
   (format (cond
            ((eq type :example)

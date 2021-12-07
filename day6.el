@@ -1,8 +1,9 @@
 (require 'dash)
 (require 'advent-utils)
 
-;;; TODO/FIXME arrays were the way to go
+;; table: intorno a 1.3ms 13ms
 
+;;; TODO/FIXME arrays were the way to go
 (defun day6/read-fishes (line)
   (-map #'string-to-number (split-string line "," t)))
 
@@ -28,7 +29,9 @@
      (setq message (concat message (format "%d -> %d\n" it (advent/get counter it)))))
    message))
 
-;; TODO/FIXME extract the lambda
+(defun day6/increment-fishes (_ added base)
+  (+ added base))
+
 (defun day6/evolve (counter)
   "Return a new table with the structure"
   (let ((new-counter (day6/create-empty-counter)))
@@ -38,18 +41,9 @@
     ;; Generate new fishes
     (let ((0-fishes (advent/get counter 0)))
       ;; Add newly born fishes to 8
-      (advent/update new-counter
-                     8
-                     (lambda (key value)
-                       (+ value 0-fishes))
-                     0)
+      (advent/update new-counter 8 #'day6/increment-fishes 0 0-fishes)
       ;; Reset the mother to 6
-      (advent/update new-counter
-                     6
-                     (lambda (key value)
-                       (+ value 0-fishes))
-                     0)
-      )
+      (advent/update new-counter 6 #'day6/increment-fishes 0 0-fishes))
     new-counter))
 
 (defun day6/count-fishes (counter)
