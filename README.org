@@ -30,7 +30,7 @@ where the first require blocks of lines and the second a single list of lines.
 
 This inconsistency in the type of the argument was introduced for my convenience, anyway the input format is always simple and can be deducted from the argument name or the test:  it's usually lines, numbers or block of lines.
 
-There are buttercup tests that will the solution of each day against the problem input sample and my own input.
+There are buttercup tests that will run my solution for each day against the example provided with the description and my personal input.
 
 To run the tests which ensure that all solutions reproduce the expected results you can either type:
 
@@ -44,8 +44,31 @@ if you have make installed, otherwise you can execute:
 emacs --eval "(setq load-path (cons \".\" load-path))" -batch -f package-initialize -f buttercup-run-discover
 #+end_src
 
-This can be useful if you want to compute the solution against your own input, in which case you need to replace the corresponding file(s) in the =data= directory: the test will show an error in the tests corresponding to the new data and you will get a message that tells how the solution for my input (the expected value) differs from the actual value (the 
-solution of your problem).
+If you want to compute the solution against your own input:
+
+1. overwrite the data file for the day of interest in the  =data= directory with your own problem input
+2. run the test with buttercup
+
+The execution will fail and buttercup will print a message with the expected result (my solution) and the solution of your input (the number you want).
+
+Another way is to load the buffer with the specific day, and compute the solution manually (e.g. using *ielm*).
+
+Keep in mind that, in order to load the el files, you need to have the =load-path= configured to include the current directory:
+
+#+begin_src elisp
+(setq load-path (cons "." load-path))
+#+end_src
+
+Then you can do something like this:
+
+#+begin_src elisp
+(require 'day3)
+(day3/part-2 '("00100" "11110" "10110" "10111" 
+               "10101" "01111" "00111" "11100"
+               "10000" "11001" "00010" "01010"))
+#+end_src
+
+But, obviously, if you are on this repository, you are the kind of /connoisseur/ who doesn't need detailed instructions… :)
 
 *** Day 5
 
