@@ -10,7 +10,14 @@
                   ((:a :b :d :e :f :g) . 6)
                   ((:a :c :f) . 7)
                   ((:a :b :c :d :e :f :g) . 8)
-                  ((:a :b :c :d :f :g) . 9)))
+                  ((:a :b :c :d :f :g) . 9))
+  "The digits encoded as plists")
+
+(defconst day8/show-messages nil "Turn debug printouts on")
+
+(defun day8/print (string)
+  (if day8/show-messages 
+      (print string)))
 
 (defun day8/pattern-to-plist (pattern)
   "Turn a pattern into a list of keywords"
@@ -43,14 +50,10 @@
   "Return all patterns with x digits"
   (--filter (= (length it) x) patterns))
 
-(defun day8/print (string)
-  (print string)
-  )
-
 (defun day8/decode-digit (conversion digit)
   (day8/print (format "Original digit: %s" digit))
   (let ((converted (--sort (string< (symbol-name it)
-                              (symbol-name other))
+                                    (symbol-name other))
                            (--map (advent/get conversion it) digit))))
     (day8/print (format "Converted digit: %s -> '%s'" converted (alist-get converted codes nil nil 'equal)))
     (alist-get converted codes nil nil 'equal)))
@@ -83,9 +86,9 @@
                                     (day8/get-x-digits patterns 6))))
         (assert (= (length 6-digits-missing) 3))
         (let ((d (caar (--filter (not
-                                 (or (memq c it)
-                                     (memq e it)))
-                                6-digits-missing))))
+                                  (or (memq c it)
+                                      (memq e it)))
+                                 6-digits-missing))))
           (list d e))))))
 
 (defun day8/get--a (patterns c f)
@@ -93,13 +96,13 @@
     (car (delete f (delete c (copy-sequence 7-sequence))))))
 
 (defun day8/get--c-and-f (patterns)
-  "Get 'c' the missing line from 2 digit that is also missing in one of the 5 digits (the other is f)"
+  "Get 'c' the missing line from 2 digit that is also missing in one of the 6 digits (the other is f)"
   (let ((2-digit (car (day8/get-x-digits patterns 2)))
-        (5-digits-missing-lines (-map #'day8/get-missing-lines (day8/get-x-digits patterns 5))))
+        (6-digits-missing-lines (-map #'day8/get-missing-lines (day8/get-x-digits patterns 6))))
     (let ((first-2-digit-missing (car 2-digit))
           (second-2-digit-missing (cadr 2-digit))
           (c-f nil))
-      (if (--any (memq first-2-digit-missing it) 5-digits-missing-lines)
+      (if (--any (memq first-2-digit-missing it) 6-digits-missing-lines)
           2-digit
         (reverse 2-digit)))))
 
@@ -135,17 +138,20 @@
   conversion)
 
 (defun day8/find-conversion-table (patterns)
+  (day8/print "=== Patterns:")
+  (--each patterns (day8/print (format "%d :: %s" (length it) it)))
+  (day8/print "===")
   "Logic to decode the pattern"
   (let ((conversion (advent/table)))
     ;; Decode the C and F lines
     (let ((c-f (day8/get--c-and-f patterns)))
       (advent/put conversion :c (car c-f))
       (advent/put conversion :f (cadr c-f)))
-    ;; * Decode A using c and f
+    ;; Decode A using c and f
     (advent/put conversion :a (day8/get--a patterns
                                            (day8/get-line conversion :c)
                                            (day8/get-line conversion :f)))
-    ;; Decode B using f  ??
+    ;; Decode B using f
     (advent/put conversion :b (day8/get--b patterns (day8/get-line conversion :f)))
     ;; Decode the D and E lines using c
     (let ((d-e (day8/get--d-and-e patterns (day8/get-line conversion :c))))
@@ -161,14 +167,11 @@
   "Read a pattern/output code and returns the output value"
   (let* ((patterns (plist-get code :patterns))
          (conversion (day8/find-conversion-table patterns)))
-   (day8/decode-output conversion (plist-get code :output))))
+    (day8/decode-output conversion (plist-get code :output))))
 
 (defun day8/part-2 (lines)
-  (let ((codes (day8/read-codes lines)))
-    (apply #'+ (-map #'day8/decode-input codes))))
+  (apply #'+
+         (-map #'day8/decode-input
+               (day8/read-codes lines))))
 
 (provide 'day8)
-
-(setq examples (day8/read-codes (advent/read-problem-lines 8 :example)))
-(setq patterns (plist-get (car examples) :patterns))
-(setq an-example (day8/read-code "acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab | cdfeb fcadb cdfeb cdbaf"))
