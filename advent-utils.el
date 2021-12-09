@@ -27,6 +27,13 @@ WARNING: nil values are not properly supported!"
     (advent/put table key new-value)
     new-value))
 
+(defun advent/create--grid-line (row columns)
+  (--map (cons row it) (number-sequence 0 (1- columns))))
+
+(defun advent/create-coordinates (rows columns)
+  (-flatten (--map (advent/create--grid-line it columns)
+                   (number-sequence 0 (1- rows)))))
+
 (defun advent/iterate (f initial-value n)
   (let ((value initial-value))
    (while (> n 0)
