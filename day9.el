@@ -89,6 +89,9 @@
        2))
 
 (defun day9/part-2 (lines)
+  (setq max-lisp-eval-depth 10000)
+  (setq max-specpdl-size 10000)
+  
   (let* ((map (day9/read-map lines))
          (basins (day9/get-basins map)))
     (apply #'*
@@ -96,5 +99,3 @@
                   (-sort #'> (-map #'length basins))))))
 
 (provide 'day9)
-(setq max-lisp-eval-depth 100000)
-(setq max-specpdl-size 100000)
