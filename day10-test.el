@@ -34,9 +34,9 @@
     (it "replicates the example"
       (expect (day10/part-1 (advent/read-problem-lines 10 :example))
               :to-be 26397 ))
-    (xit "solves the problem"
+    (it "solves the problem"
       (expect (day10/part-1 (advent/read-problem-lines 10 :problem))
-              :to-be 42)))
+              :to-be 167379)))
   (xdescribe "part 2"
     (it "replicates the example"
       (expect (day10/part-2 (advent/read-problem-lines 10 :example))
