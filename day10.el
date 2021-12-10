@@ -17,37 +17,6 @@
 (defun day10/read-instructions (lines)
   (-map #'day10/read-blocks lines))
 
-(defun day10/check--counter (counter)
-  "Returns the counter if correct or the offending bracket otherwise"
-  (if-let ((offending-index (seq-position counter -1)))
-      (elt '(:-r :-s :-c :-a) offending-index)
-    counter))
-
-(defun day10/sum--counters (counter added)
-  (let ((result (--map (+ (car it) (cdr it))
-                       (-zip counter added))))
-    (print result)
-    result))
-
-(defun day10/update--counters (acc char)
-  (day10/check--counter
-   (day10/sum--counters
-    acc
-    (case char
-      (:-r '(-1 0 0 0))
-      (:+r '(1 0 0 0))
-      (:-s '(0 -1 0 0))
-      (:+s '(0 1 0 0))
-      (:-c '(0 0 -1 0))
-      (:+c '(0 0 1 0))
-      (:-a '(0 0 0 -1))
-      (:+a '(0 0 0 +1))))))
-
-(defun day10/check--next (acc char)
-  (if (not (listp acc))
-      acc
-    (day10/update--counters acc char)))
-
 (defun day10/get-matching-bracket (bracket)
   (case bracket
     (:-r :+r )
@@ -73,8 +42,11 @@
       ((:-r :-s :-c :-a)  (day10/reduce--accumulator acc char))
       (t (error "Unexpected character received!")))))
 
+(defun day10/reduce-blocks (blocks)
+  (-reduce-from #'day10/reduce-element (list (car blocks)) (rest blocks)))
+
 (defun day10/corrupted? (blocks)
-  (let ((result (-reduce-from #'day10/reduce-element (list (car blocks)) (rest blocks))))
+  (let ((result (day10/reduce-blocks blocks)))
     (if (listp result)
         nil
       result)))
@@ -94,10 +66,30 @@
                    (-map #'day10/corrupted?
                          (day10/read-instructions lines)))))
 
-(defun day10/part-2 (lines)
-  (error "Not yet implemented"))
+(defun day10/missing-brackets (blocks)
+  (let ((reduced (day10/reduce-blocks blocks)))
+    (if (listp reduced)
+        (-map #'day10/get-matching-bracket reduced))))
 
-(defvar example (day10/read-instructions (advent/read-problem-lines 10 :example)))
-(defvar problem (day10/read-instructions (advent/read-problem-lines 10 :problem)))
+(defun day10/tool-score (bracket)
+  (case bracket
+    (:-r 1)
+    (:-s 2)
+    (:-c 3)
+    (:-a 4)
+    (t (error (format "Unexpected bracket: %s" bracket)))))
+
+(defun day10/score-missing-brackets (brackets-list)
+  (--reduce-from (+ (* 5 acc) (day10/tool-score it)) 0 brackets-list))
+
+(defun day10/get-middle-value (scores)
+  (elt (sort (copy-sequence scores) #'<) (/ (length scores) 2)))
+
+(defun day10/part-2 (lines)
+  (day10/get-middle-value
+   (-map #'day10/score-missing-brackets
+         (-non-nil
+                  (-map #'day10/missing-brackets
+                        (day10/read-instructions lines))))))
 
 (provide 'day10)
