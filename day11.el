@@ -59,12 +59,15 @@
           (and (>= new-column 0) (< new-column (cdr grid-size))
                (cons new-row new-column))))))
 
+(defun day11/get-grid-size (grid)
+  (cons (length grid) (length (aref grid 0))))
+
 (defmacro day11/loop-neighbors (grid coord &rest body)
   "Loop over all valid cell neighbors binding the coordinates to 'it'"
   (declare (indent 2))
   (let ((displacement (make-symbol "displacement"))
         (grid-size (make-symbol "grid-size")))
-    `(let ((,grid-size (cons (length ,grid) (length (aref ,grid 0)))))
+    `(let ((,grid-size (day11/get-grid-size ,grid)))
        (-map (lambda (,displacement)
                (let ((it (day11/updated-coordinate ,grid-size ,coord ,displacement)))
                  (when it                     
@@ -121,7 +124,23 @@
           (setq counter (+ counter (day11/evolve! grid))))
     counter))
 
+(defun day11/total-cells (grid)
+  (let ((size (day11/get-grid-size grid)))
+    (* (car size) (cdr size))))
+
 (defun day11/part-2 (lines)
-  (error "Not yet implemented"))
+  (setq max-lisp-eval-depth 1000000)
+  (setq max-specpdl-size 1000000)
+  (let ((grid (day11/read-grid lines)))
+    (let ((total-cells (day11/total-cells grid))
+          (flashes 0)
+          (step 0))
+      (loop until (= flashes total-cells)
+            do
+            (progn 
+              (setq step (1+ step))
+              (setq flashes (day11/evolve! grid))
+              step))
+      step)))
 
 (provide 'day11)
