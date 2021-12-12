@@ -2,10 +2,17 @@
 (require 'advent-utils)
 
 (defun day12/node-to-keyword (node-name)
-  (intern (concat ":" node-name)))
+  (cons (string= (upcase node-name) node-name)
+        (intern (concat ":" node-name))))
 
 (defun day12/keyword-to-node-name (node)
-  (substring (symbol-name node) 1))
+  (substring (symbol-name (cdr node)) 1))
+
+(defun day12/is-start? (node)
+  (eq (cdr node) :start))
+
+(defun day12/is-end? (node)
+  (eq (cdr node) :end))
 
 (defun day12/add--connection-leg (connections pair)
   (let ((destinations (advent/get connections (car pair) nil)))
@@ -32,8 +39,7 @@
   (apply #'concat (-interpose "," (-map #'day12/keyword-to-node-name path))))
 
 (defun day12/is-big-cave? (node)
-  (let ((name (day12/keyword-to-node-name node)))
-    (string= (upcase name) name)))
+  (car node))
 
 (defun day12/can-be-visited-simple? (visited node)
   (or (day12/is-big-cave? node)
@@ -44,7 +50,7 @@
   (let ((visited (plist-get state :visited))
         (current-path (plist-get state :path)))
    (let ((last (car current-path)))
-     (unless (eq last :end)
+     (unless (day12/is-end? last)
        (--filter (funcall visit-logic visited it) (advent/get connections last))))))
 
 (defun day12/get-updated-visit-count (old-visited node)
@@ -68,8 +74,8 @@
             next-candidates))))
 
 (defun day12/is-complete? (path)
-  (and (eq (car path ) :end)
-       (eq (car (last path)) :start)))
+  (and (day12/is-end? (car path ))
+       (day12/is-start? (car (last path)))))
 
 (defun day12/recurse--paths (connections visit-logic states)
   "evolve the states until there is nothing to evolve"
@@ -87,10 +93,10 @@
   (cons nil (advent/table)))
 
 (defun day12/compute-all-paths-simple (connections)
-  (let ((visited (day12/get-updated-visit-count (day12/create-visited) :start)))
+  (let ((visited (day12/get-updated-visit-count (day12/create-visited) '(nil . :start))))
     (--map (reverse (plist-get it :path))
            (day12/recurse--paths connections #'day12/can-be-visited-simple?
-                                    (list (list :visited visited :path '(:start))))))  )
+                                    (list (list :visited visited :path '((nil . :start)))))))  )
 
 (defun day12/part-1 (lines)
   (length
@@ -103,8 +109,8 @@
 
 (defun day12/can-be-visited-count? (visited-data node)
   (let ((visited (cdr visited-data)))
-   (unless (eq node :start)
-     (or (eq node :end)
+   (unless (day12/is-start? node)
+     (or (day12/is-end? node)
          (day12/is-big-cave? node)
          (let ((visit-count (advent/get visited node 0)))
            (< visit-count (if (day12/single-small-cave-already-visited-twice? visited-data)
@@ -115,7 +121,7 @@
 (let ((visited (day12/create-visited)))
     (--map (reverse (plist-get it :path))
            (day12/recurse--paths connections #'day12/can-be-visited-count?
-                                    (list (list :visited visited :path '(:start))))))  )
+                                    (list (list :visited visited :path '((nil . :start)))))))  )
 
 (defun day12/part-2 (lines)
     (length
