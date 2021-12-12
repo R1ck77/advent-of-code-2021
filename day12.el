@@ -47,9 +47,10 @@
      (unless (eq last :end)
        (--filter (funcall visit-logic visited it) (advent/get connections last))))))
 
-(defun day12/increase-visit-count (visited node)
-  (unless (day12/is-big-cave? node)
-    (advent/put visited node (1+ (advent/get visited node 0)))))
+(defun day12/get-updated-visit-count (old-visited node)
+  (let ((visited (advent/copy-table old-visited)))
+    (advent/put visited node (1+ (advent/get visited node 0)))
+    visited))
 
 (defun day12/add--leg (connections visit-logic state)
   "Take a connection and returns a list of expanded paths (or nil) if none could be found"
@@ -58,9 +59,7 @@
    (let ((next-candidates (day12/get--next visit-logic  connections state)))
      (--map (list
              :path (cons it current-path)
-             :visited (let ((new-visited (advent/copy-table visited)))
-                        (day12/increase-visit-count new-visited it)
-                        new-visited))
+             :visited (day12/get-updated-visit-count visited it))
             next-candidates))))
 
 (defun day12/is-complete? (path)
@@ -80,8 +79,7 @@
         (day12/recurse--paths connections visit-logic (append (apply #'append complete-states updated-states)))))))
 
 (defun day12/compute-all-paths-simple (connections)
-  (let ((visited (advent/table)))
-    (day12/increase-visit-count visited :start)
+  (let ((visited (day12/get-updated-visit-count (advent/table) :start)))
     (--map (reverse (plist-get it :path))
            (day12/recurse--paths connections #'day12/can-be-visited-simple?
                                     (list (list :visited visited :path '(:start))))))  )
@@ -95,9 +93,10 @@
   (let ((visited-twice))
     (maphash (lambda (k v)
                (unless (or (eq k :start)
-                           (eq k :end)
-                           (day12/is-big-cave? k)))
-               (if (= v 2) (setq visited-twice t)))
+                       (eq k :end)
+                       (day12/is-big-cave? k)
+                       (< v 2))
+                   (setq visited-twice t)))
              visited)
     visited-twice))
 
@@ -122,3 +121,13 @@
     (day12/read-nodes lines))))
 
 (provide 'day12)
+
+(defvar example (day12/read-nodes (advent/read-problem-lines 12 :example)))
+(defvar tiny (day12/read-nodes (split-string "start-A
+start-b
+A-c
+A-b
+b-d
+A-end
+b-end")))
+
