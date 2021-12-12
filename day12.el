@@ -47,6 +47,10 @@
      (unless (eq last :end)
        (--filter (funcall visit-logic visited it) (advent/get connections last))))))
 
+(defun day12/increase-visit-count (visited node)
+  (unless (day12/is-big-cave? node)
+    (advent/put visited node (1+ (advent/get visited node 0)))))
+
 (defun day12/add--leg (connections visit-logic state)
   "Take a connection and returns a list of expanded paths (or nil) if none could be found"
   (let ((visited (plist-get state :visited))
@@ -55,7 +59,7 @@
      (--map (list
              :path (cons it current-path)
              :visited (let ((new-visited (advent/copy-table visited)))
-                        (advent/put new-visited it (1+ (advent/get new-visited it 0)))
+                        (day12/increase-visit-count new-visited it)
                         new-visited))
             next-candidates))))
 
@@ -77,7 +81,7 @@
 
 (defun day12/compute-all-paths-simple (connections)
   (let ((visited (advent/table)))
-    (advent/put visited :start 1)
+    (day12/increase-visit-count visited :start)
     (--map (reverse (plist-get it :path))
            (day12/recurse--paths connections #'day12/can-be-visited-simple?
                                     (list (list :visited visited :path '(:start))))))  )
@@ -87,15 +91,27 @@
    (day12/compute-all-paths-simple
     (day12/read-nodes lines))))
 
+(defun day12/single-small-cave-already-visited-twice? (visited)
+  (let ((visited-twice))
+    (maphash (lambda (k v)
+               (unless (or (eq k :start)
+                           (eq k :end)
+                           (day12/is-big-cave? k)))
+               (if (= v 2) (setq visited-twice t)))
+             visited)
+    visited-twice))
+
 (defun day12/can-be-visited-count? (visited node)
-  (or (day12/is-big-cave? node)
-      (let ((visit-count (advent/get visited node 0)))
-        (< visit-count 2))))
+  (unless (eq node :start)
+   (or (eq node :end)
+       (day12/is-big-cave? node)
+       (let ((visit-count (advent/get visited node 0)))
+         (< visit-count (if (day12/single-small-cave-already-visited-twice? visited)
+                            1
+                          2))))))
 
 (defun day12/compute-all-paths-count (connections)
-  (let ((visited (advent/table)))
-    (advent/put visited :start 2)
-    (advent/put visited :end 1)    
+(let ((visited (advent/table)))
     (--map (reverse (plist-get it :path))
            (day12/recurse--paths connections #'day12/can-be-visited-count?
                                     (list (list :visited visited :path '(:start))))))  )
@@ -106,12 +122,3 @@
     (day12/read-nodes lines))))
 
 (provide 'day12)
-
-(defvar example (day12/read-nodes (advent/read-problem-lines 12 :example)))
-(defvar tiny (day12/read-nodes (split-string "start-A
-start-b
-A-c
-A-b
-b-d
-A-end
-b-end")))
