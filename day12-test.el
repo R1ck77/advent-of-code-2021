@@ -17,7 +17,7 @@ b-end"))
       (it "computes all paths for the tiny example"
         (expect (sort
                  (-map #'day12/str-path
-                       (day12/compute-all-paths
+                       (day12/compute-all-paths-simple
                         (day12/read-nodes (split-string "start-A
 start-b
 A-c
@@ -56,7 +56,7 @@ kj-dc"))
     (it "solves the problem"
       (expect (day12/part-1 (advent/read-problem-lines 12 :problem))
               :to-be 4754)))
-  (xdescribe "part 2"
+  (describe "part 2"
     (it "replicates the example"
       (expect (day12/part-2 (advent/read-problem-lines 12 :example))
               :to-be 3509))
