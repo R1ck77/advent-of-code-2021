@@ -1,4 +1,7 @@
-.PHONY: test run
+.PHONY: test last
 
 test:
-	emacs --eval "(setq load-path (cons \".\" load-path))" -batch -f package-initialize -f buttercup-run-discover
+	emacs -f package-initialize -batch --eval "(setq load-path (cons \".\" load-path))" -f buttercup-run-discover
+
+last:
+	emacs -f package-initialize -batch -l run-last.el  --eval "(run-last-test)"
