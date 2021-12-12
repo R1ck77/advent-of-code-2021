@@ -8,6 +8,9 @@
 (defun advent/table ()
   (make-hash-table :test #'equal))
 
+(defun advent/copy-table (table)
+  (copy-hash-table table))
+
 (defun advent/put (table key value)
   (puthash key value table))
 

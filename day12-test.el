@@ -18,13 +18,13 @@ b-end"))
         (expect (sort
                  (-map #'day12/str-path
                        (day12/compute-all-paths
-                        (split-string "start-A
+                        (day12/read-nodes (split-string "start-A
 start-b
 A-c
 A-b
 b-d
 A-end
-b-end")))
+b-end"))))
                  #'string<)
                 :to-equal (sort '("start,A,b,A,c,A,end"
                                   "start,A,b,A,end"
@@ -37,7 +37,7 @@ b-end")))
                                   "start,b,A,end"
                                   "start,b,end")
                                 #'string<)))
-      (xit "computes the number of paths for the medium example"
+      (it "computes the number of paths for the medium example"
         (expect (day12/part-1
                  (split-string "dc-end
 HN-start
@@ -50,16 +50,16 @@ kj-sa
 kj-HN
 kj-dc"))
                 :to-be 19)))
-    (xit "replicates the example"
+    (it "replicates the example"
       (expect (day12/part-1 (advent/read-problem-lines 12 :example))
               :to-be 226))
-    (xit "solves the problem"
+    (it "solves the problem"
       (expect (day12/part-1 (advent/read-problem-lines 12 :problem))
-              :to-be 42)))
+              :to-be 4754)))
   (xdescribe "part 2"
     (it "replicates the example"
       (expect (day12/part-2 (advent/read-problem-lines 12 :example))
-              :to-be 42))
+              :to-be 3509))
     (xit "solves the problem"
       (expect (day12/part-2 (advent/read-problem-lines 12 :problem))
               :to-be 42))))
