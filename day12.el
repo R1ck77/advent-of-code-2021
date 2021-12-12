@@ -79,15 +79,15 @@
 
 (defun day12/recurse--paths (connections visit-logic states)
   "evolve the states until there is nothing to evolve"
-  ;; There is a -dash function for this…
-  (let ((complete-states (--filter (day12/is-complete? (plist-get it :path)) states))
-        (incomplete-states (--filter (not (day12/is-complete? (plist-get it :path))) states)))
-    (if (not incomplete-states)
-        ;; nothing to do, just return the list of complete states
-        complete-states
+  (let* ((separated (--separate (day12/is-complete? (plist-get it :path)) states))
+         (complete-states (car separated))
+         (incomplete-states (cadr separated)))
+    (if incomplete-states
       ;; the next states can be evolved, maybe?
       (let ((updated-states (--map (day12/add--leg visit-logic connections it) incomplete-states)))
-        (day12/recurse--paths connections visit-logic (append (apply #'append complete-states updated-states)))))))
+        (day12/recurse--paths connections visit-logic (append (apply #'append complete-states updated-states))))
+        ;; nothing to do, just return the list of complete states
+        complete-states)))
 
 (defun day12/create-visited ()
   (cons nil (advent/table)))
@@ -129,13 +129,3 @@
     (day12/read-nodes lines))))
 
 (provide 'day12)
-
-(defvar example (day12/read-nodes (advent/read-problem-lines 12 :example)))
-(defvar tiny (day12/read-nodes (split-string "start-A
-start-b
-A-c
-A-b
-b-d
-A-end
-b-end")))
-
