@@ -118,4 +118,21 @@ WARNING: nil values are not properly supported!"
               (advent/bogus-gradient center end f))
              (t (error "This is weird…")))))))
 
+(defmacro advent/loop-grid (grid &rest forms)
+  "Non-hygienic macro that bind all coordinates of the grid to 'it'
+
+it is bound to the current row and column"
+  (declare (indent 1))
+  (let ((rows (make-symbol "rows"))
+        (columns (make-symbol "columns"))
+        (i (make-symbol "i"))
+        (j (make-symbol "j"))
+        (it (make-symbol "it")))
+   `(let ((,rows (length ,grid))
+          (,columns (length (aref ,grid 0))))
+      (loop for ,i from 0 below ,rows do
+            (loop for ,j from 0 below ,columns do
+                  (let ((it (cons ,i ,j)))
+                    ,@forms))))))
+
 (provide 'advent-utils)

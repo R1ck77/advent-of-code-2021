@@ -7,7 +7,7 @@
 (defun day11/convert-line (line)
   (apply #'vector (-map #'day11/convert-cell (split-string line "" t))))
 
-(defmacro day11/loop-grid (grid &rest forms)
+(defmacro /loop-grid (grid &rest forms)
   "Non-hygienic macro that bind all coordinates of the grid to 'it'"
   (declare (indent 1))
   (let ((rows (make-symbol "rows"))
@@ -38,7 +38,7 @@
     (string-trim result)))
 
 (defun day11/increase-grid-energy-levels! (grid)
-  (day11/loop-grid grid
+  (advent/loop-grid grid
     (let ((cell (aref (aref grid (car it)) (cdr it))))
       (aset cell 0 (1+ (aref cell 0)))))
   grid)
@@ -96,12 +96,12 @@
 
 (defun day11/flash--cycle! (grid)
   "Make some octopi flash. Returns the modified grid"  
-  (day11/loop-grid grid
+  (advent/loop-grid grid
     (day11/flash--cell! grid it)))
 
 (defun day11/clear-count-flashes! (grid)
   (let ((counter 0))
-    (day11/loop-grid grid
+    (advent/loop-grid grid
       (let ((cell (day11/get-cell grid it)))
         (when (aref cell 1)
           (setq counter (1+ counter))
