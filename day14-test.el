@@ -8,7 +8,7 @@
       (it "expands the example correctly once"
         (expect (day14/format-polymer
                  (day14/expand
-                  (day14/read-template (advent/read-blocks-of-lines 14 :example))))
+                  (day14/read-template (advent/read-blocks-of-lines 14 :example)) 1))
                 :to-equal "NCNBCHB"))
       (it "expands the example correctly twice"
         (expect (day14/format-polymer
@@ -28,9 +28,9 @@
     (it "replicates the example"
       (expect (day14/part-1 (advent/read-blocks-of-lines 14 :example))
               :to-be 1588 ))
-    (xit "solves the problem"
+    (it "solves the problem"
       (expect (day14/part-1 (advent/read-blocks-of-lines 14 :problem))
-              :to-be 42)))
+              :to-be 2937)))
   (xdescribe "part 2"
     (it "replicates the example"
       (expect (day14/part-2 (advent/read-blocks-of-lines 14 :example))
