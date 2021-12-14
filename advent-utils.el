@@ -12,7 +12,13 @@
   (copy-hash-table table))
 
 (defun advent/put (table key value)
-  (puthash key value table))
+  (puthash key value table)
+  table)
+
+(defun advent/cache (table key value)
+  "Like advent/put, but returns the value instead of the table"
+  (puthash key value table)
+  value)
 
 (defun advent/get (table key &optional default)
   (gethash key table default))
@@ -22,13 +28,50 @@
 
 \"other\" is appended to the list of arguments of f, if present
 
-Returns the new value.
+Returns the table
 
 WARNING: nil values are not properly supported!"
   (let* ((old-value (advent/get table key))
          (new-value (apply f (cons key (cons (or old-value default) other)))))
     (advent/put table key new-value)
-    new-value))
+    table))
+
+(defmacro advent/-update (table key form &optional default &rest other)
+  "Anaphoric form of advent/update
+
+It binds:
+    it-key to the key
+    it-value to the value
+    other to the remaining arguments"
+  `(advent/update ,table
+                  ,key
+                  (lambda (it-key it-value &rest other) ,form)
+                  ,default
+                  ,other))
+
+(defun advent/map-hash (table function)
+  "Like maphash, but accumulates the return like -map does"
+  (let ((result))
+    (maphash (lambda (k v)
+               (setq result (cons (funcall function k v) result)))
+             table)
+    (nreverse result)))
+
+(defmacro advent/-map-hash (table &rest forms)
+  "Anaphoric version of advent/map-hash that binds key and value to it-key and it-value"
+  (declare (indent 1))
+  `(advent/map-hash ,table
+                    (lambda (it-key it-value)
+                      ,@forms)))
+
+(defun advent/each-hash (table function)
+  "Same as (maphash function table)"
+  (maphash function table))
+
+(defmacro advent/-each-hash (table &rest forms)
+  "Anaphoric for for advent/each-hash that binds key and value to it-key and it-value"
+  (declare (indent 1))
+  `(advent/each-hash ,table (lambda (it-key it-value) ,@forms)))
 
 (defun advent/create--grid-line (row columns)
   (--map (cons row it) (number-sequence 0 (1- columns))))
@@ -44,7 +87,6 @@ WARNING: nil values are not properly supported!"
      (setq n (1- n)))
    value))
 
-;;; TODO/FIXME create an anaphoric version and use it in day6
 (defun advent/compute-input-name (day type)
   (format (cond
            ((eq type :example)
@@ -134,5 +176,16 @@ it is bound to the current row and column"
             (loop for ,j from 0 below ,columns do
                   (let ((it (cons ,i ,j)))
                     ,@forms))))))
+
+(defmacro advent/time (&rest forms)
+  "Time the forms and return a cons with the time in ms and the result"
+  (declare (indent 0))
+  (let ((start-time (make-symbol "start-time"))
+        (result (make-symbol "result")))
+    `(let ((,start-time (float-time))
+           (,result))
+       (setq ,result (progn ,@forms))
+       (list (- (float-time) ,start-time)
+             ,result))))
 
 (provide 'advent-utils)
