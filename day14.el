@@ -44,20 +44,50 @@
   "Returns a list with the new elements (either two new couples or e-e again)"
   (advent/get rules e-e (list e-e)))
 
-;; DUMB approach in n steps
-(defun day14/insert (polymer rules)
-  "Return a new polymer expanded with the new rules"
-  (--reduce-from (let ((replacement (day14/get-replacement rules it)))
-                   (append acc replacement))
-                 '()
+(defun day14/create-empty-frequencies ()
+  (advent/table))
+
+(defun day14/add--to-frequencies (freq-acc token)
+  (advent/put freq-acc token (1+ (advent/get freq-acc token 0)))
+  freq-acc)
+
+(defun day14/add-frequencies (freq-acc pair)
+  (day14/add--to-frequencies freq-acc (car pair)))
+
+;; TODO/FIXME this shouldn't exist
+(defun day14/cache (cache cache-key result)
+  (advent/put cache cache-key result)
+  result)
+
+(defun day14/count-pair (cache pair rules times)
+  "Expands a pair n times and returns the accumulator with the frequencies"
+  (if (zerop times)
+      (day14/add-frequencies (day14/create-empty-frequencies) pair)
+    (let ((cache-key (list pair times)))
+      (or (advent/get cache cache-key)
+          (day14/cache cache cache-key (let ((evolved (day14/get-replacement rules pair)))
+             (if (= (length evolved) 1)
+                 (day14/add-frequencies (day14/create-empty-frequencies) (car evolved))
+               (day14/count-polymer cache evolved rules (1- times)))))))))
+
+;; TODO/FIXME update function for tables and a decent maphash
+(defun day14/accumulate-frequencies (freq-acc-1 freq-acc-2)
+  (maphash (lambda (k v)
+             (advent/put freq-acc-1 k (+ (advent/get freq-acc-1 k 0) v)))
+           freq-acc-2)
+  freq-acc-1)
+
+(defun day14/count-polymer (cache polymer rules times)
+  "Return the frequencies accumulator for the polymer"
+  (--reduce-from (day14/accumulate-frequencies acc (day14/count-pair cache it rules times))
+                 (day14/create-empty-frequencies)
                  polymer))
 
 (defun day14/expand (template times)
-  (if (zerop times)
-      template
-    (let ((new-polymer (apply #'day14/insert template)))
-      (day14/expand (list new-polymer (cadr template))
-                    (1- times)))))
+  (let ((polymer (car template))
+        (cache (advent/table)))    
+    (day14/add--to-frequencies (day14/count-polymer cache polymer (cadr template) times)
+                               (cadr (car (last polymer))))))
 
 (defun day14/get-polymer-chain (template)
   "Convert the chain of pairs into a chain of tokens"
@@ -67,32 +97,49 @@
                           '()
                           polymer)))))
 
-(defun day14/format-polymer (template)
-  (let ((chain (day14/get-polymer-chain template)))
-    (apply #'concat (-map #'day14/token-to-letter chain))))
+(defun day14/create-nice-frequency (frequency)
+  (let ((nice-frequency))
+    (maphash (lambda (k v)
+               (setq nice-frequency (append nice-frequency (list k v))))
+             frequency)
+    nice-frequency))
 
-(defun day14/frequency (template)
-  (let ((frequency (advent/table))
-        (chain (day14/get-polymer-chain template)))
-    (--each chain
-      (advent/put frequency it (1+ (advent/get frequency it 0))))
-    (let ((nice-frequency))
-      (maphash (lambda (k v)
-                 (setq nice-frequency (append nice-frequency (list k v)))
-                 )
-               frequency)
-      nice-frequency)))
-
-(defun day14/frequency-difference (template)
-  (let ((frequencies (sort (-map #'cadr (-partition 2 (day14/frequency template))) #'<)))
+(defun day14/frequency-difference (nice-frequency)
+  (let ((frequencies (sort (-map #'cadr (-partition 2 nice-frequency)) #'<)))
     (- (car (last frequencies)) (car frequencies))))
 
-(defun day14/part-1 (blocks)
+(defun day14/solve-for  (blocks steps)
   (day14/frequency-difference
-   (day14/expand (day14/read-template blocks) 10)))
+   (day14/create-nice-frequency
+    (day14/expand (day14/read-template blocks) steps))))
+
+(defmacro day14/time (&rest forms)
+  "Time the forms and return a cons with the time in ms and the result"
+  (declare (indent 0))
+  (let ((start-time (make-symbol "start-time"))
+        (result (make-symbol "result")))
+    `(let ((,start-time (float-time))
+           (,result))
+       (setq ,result (progn ,@forms))
+       (list (- (float-time) ,start-time)
+             ,result))))
+
+(defun day14/part-1 (blocks)
+  (day14/solve-for blocks 10))
 
 (defun day14/part-2 (blocks)
-  (error "Not yet implemented"))
+  (day14/solve-for blocks 40))
 
 (provide 'day14)
+
+(defun day14/test-solution ()
+  (let ((input (advent/read-blocks-of-lines 14 :example))
+        (steps 10)
+        (time 0))
+    (while (< time 30)
+      (let ((time-result (day14/time (day14/solve-for input steps))))
+        (setq time (car time-result))
+        (print (format "%2d    %s\"   %d" steps time (cadr time-result)))
+        (setq steps (1+ steps))
+        (redisplay)))))
 
