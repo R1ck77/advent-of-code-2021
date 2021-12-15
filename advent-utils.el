@@ -118,13 +118,35 @@ It binds:
          (--map (copy-sequence (aref grid it))
                 (number-sequence 0 (1- (length grid))))))
 
+(defun advent/update-grid-value! (grid coord f)
+  (let ((i (car coord))
+        (j (cdr coord)))
+    (let* ((old-value (aref (aref grid i) j))
+          (new-value (funcall f old-value)))
+      (aset (aref grid i) j new-value)
+      new-value)))
+
+(defmacro advent/-update-grid-value! (grid coord &rest body)
+  "Anaphoric form. Binds 'it' to value"
+  (declare (indent 2))
+  `(advent/update-grid-value! ,grid ,coord (lambda (it) ,@body)))
+
 (defun advent/update-grid! (grid f)
   "Update in placethe value of a grid with f, which receives the current cell value as input"
   (loop for i below (length grid) do
         (loop for j below (length (aref grid 0)) do
-              (let ((old-value (aref (aref grid i) j)))
-                (aset (aref grid i) j (funcall f old-value)))))
+              (advent/update-grid-value! grid (cons i j) f)))
   grid)
+
+(defmacro advent/-update-grid! (grid &rest forms)
+  "Anaphoric version of advent/update-grid!
+
+The value is binded to 'it'"
+  (declare (indent 1))
+  `(advent/update-grid! ,grid (lambda (it) ,@forms)))
+
+(defun advent/grid-set! (grid row-column value)
+  (aset (aref grid (car row-column)) (cdr row-column) value))
 
 (defun advent/read-problem-numbers-line (day type)
   (-map #'string-to-number
