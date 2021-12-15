@@ -256,6 +256,7 @@ it is bound to the current row and column"
 
 (defvar advent/step nil "internal variable used to keep track of the steps")
 
+;; TODO/FIXME this should be converted into an hygienic macro
 (defun advent/reset-steps ()
   (setq advent/steps (cons 0 (float-time))))
 
