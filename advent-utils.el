@@ -109,7 +109,7 @@ It binds:
 
 (defun advent/read-grid (day type &optional conversion-f)
   (apply #'vector
-         (--map (advent/read--grid-line it (or conversion-f #'identity))
+         (--map (advent/read--grid-line it (or conversion-f #'string-to-number))
                 (advent/read-problem-lines day type))))
 
 (defun advent/copy-grid (grid)
@@ -117,6 +117,15 @@ It binds:
   (apply #'vector
          (--map (copy-sequence (aref grid it))
                 (number-sequence 0 (1- (length grid))))))
+
+(defun advent/debug-str-grid (grid)
+  (let ((result ""))
+    (loop for i below (length grid) do
+          (let ((current-row (aref grid i)))
+            (loop for j below (length current-row) do
+                 (setq result (concat result (format " %s" (aref current-row j))))))
+          (setq result (concat result "\n")))
+    result))
 
 (defun advent/update-grid-value! (grid coord f)
   (let ((i (car coord))
