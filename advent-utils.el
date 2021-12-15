@@ -104,6 +104,28 @@ It binds:
 (defun advent/read-problem-lines (day type)
   (split-string (advent/read-problem-text day type) "\n" t))
 
+(defun advent/read--grid-line (line conversion-f)
+  (apply #'vector (-map conversion-f (split-string line "" t))))
+
+(defun advent/read-grid (day type &optional conversion-f)
+  (apply #'vector
+         (--map (advent/read--grid-line it (or conversion-f #'identity))
+                (advent/read-problem-lines day type))))
+
+(defun advent/copy-grid (grid)
+  "Returns a copy of the grid (cells are referenced)"
+  (apply #'vector
+         (--map (copy-sequence (aref grid it))
+                (number-sequence 0 (1- (length grid))))))
+
+(defun advent/update-grid! (grid f)
+  "Update in placethe value of a grid with f, which receives the current cell value as input"
+  (loop for i below (length grid) do
+        (loop for j below (length (aref grid 0)) do
+              (let ((old-value (aref (aref grid i) j)))
+                (aset (aref grid i) j (funcall f old-value)))))
+  grid)
+
 (defun advent/read-problem-numbers-line (day type)
   (-map #'string-to-number
         (split-string (car (advent/read-problem-lines day type))
