@@ -55,16 +55,17 @@
           :distance (plist-get it :distance)
           :visited t)))
 
-(defun day15/remove-current! (grid current unvisited)
+(defun day15/remove-current! (grid current unvisited with-distance)
   (day15/set-visited! grid current)
-  (remhash current unvisited))
+  (remhash current unvisited)
+  (remhash current with-distance))
 
 (defun day15/update-distance! (grid current other with-distance)
   (let ((computed-distance (+ (day15/get-distance grid current)
                               (day15/get-value grid other)))
         (previous-distance (day15/get-distance grid other)))
     (day15/set-distance grid other (min (or previous-distance computed-distance)
-                                        computed-distance))
+                                        computed-distance))    
     (advent/put with-distance other t)))
 
 (defun day15/valid-coordinate? (coord limit)
@@ -127,7 +128,7 @@
         
         (assert (day15/get-value grid current))
         (--each neighbors (day15/update-distance! grid current it with-distance))
-        (day15/remove-current! grid current unvisited)
+        (day15/remove-current! grid current unvisited with-distance)
         (setq current (day15/pick-next-current grid unvisited neighbors with-distance)))
       (comment (day15/debug--grid grid :distance))
       (advent/step))
