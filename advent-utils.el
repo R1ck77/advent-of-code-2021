@@ -148,6 +148,9 @@ The value is binded to 'it'"
 (defun advent/grid-set! (grid row-column value)
   (aset (aref grid (car row-column)) (cdr row-column) value))
 
+(defun advent/grid-get (grid row-column)
+  (aref (aref grid (car row-column)) (cdr row-column)))
+
 (defun advent/read-problem-numbers-line (day type)
   (-map #'string-to-number
         (split-string (car (advent/read-problem-lines day type))
