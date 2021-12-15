@@ -16,12 +16,15 @@
           :distance new-distance
           :visited (plist-get it :visited))))
 
-(defun day15/pick-next-current (grid unvisited)
-  (car
-   (--filter (let ((value (advent/grid-get grid it)))
-               (assert (not (plist-get value :visited)))
-               (plist-get value :distance))
-             (advent/-map-hash unvisited it-key))))
+(defun day15/pick-next-current (grid unvisited neighbors)
+  ;; Check the direct neighbors first. Should help…
+  (caar
+   (sort (--filter (cdr it)
+              (--map (cons it (plist-get (advent/grid-get grid it) :distance))
+                     (advent/-map-hash unvisited it-key)))
+         (lambda (a b)
+           (< (cdr a)
+              (cdr b))))))
 
 (defun day15/set-visited! (grid coord)
   (advent/-update-grid-value! grid coord
@@ -57,9 +60,7 @@
                               (car it))
                            (+ (cdr coord)
                               (cdr it)))
-                     ;'((-1 . 0) (1 . 0) (0 . -1) (0 . 1))
-                     '((1 . 0) (0 . 1))
-                     ))))
+                     '((-1 . 0) (1 . 0) (0 . -1) (0 . 1))))))
 
 (defun day15/get-unvisited-neighbors (grid current unvisited)
   "Returns a list of unvisited neighbors"
@@ -85,13 +86,16 @@
 
 (defun day15/debug--grid (grid property)
   (print (format "Debugging %s for the grid" property))
-  (print (advent/debug-str-grid (advent/-update-grid! (advent/copy-grid grid)
-                                  (plist-get it property)))))
+    (print (advent/debug-str-grid grid "%10s"))
+    (comment (print (advent/debug-str-grid (advent/-update-grid! (advent/copy-grid grid)
+                                     (plist-get it property))
+                                   "%3s"))))
 
 (defun day15/dijkstra (grid)
   (let* ((current (cons 0 0))
          (grid (day15/set--initial-grid! grid current))
          (unvisited (day15/create--unvisited-set grid)))
+    (advent/reset-steps)
     (while current
       (let ((neighbors (day15/get-unvisited-neighbors grid current unvisited)))
         
@@ -99,8 +103,9 @@
         (assert (day15/get-value grid current))
         (--each neighbors (day15/update-distance! grid current it))
         (day15/remove-current! grid current unvisited)
-        (setq current (day15/pick-next-current grid unvisited)))
-      ;(day15/debug--grid grid :distance)
+        (setq current (day15/pick-next-current grid unvisited neighbors)))
+                                        ;      (day15/debug--grid grid :distance)
+      (advent/step)      
       )
     grid))
 

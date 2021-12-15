@@ -128,12 +128,12 @@ It binds:
          (--map (copy-sequence (aref grid it))
                 (number-sequence 0 (1- (length grid))))))
 
-(defun advent/debug-str-grid (grid)
+(defun advent/debug-str-grid (grid &optional format)
   (let ((result ""))
     (loop for i below (length grid) do
           (let ((current-row (aref grid i)))
             (loop for j below (length current-row) do
-                 (setq result (concat result (format " %s" (aref current-row j))))))
+                 (setq result (concat result " " (format (or format "%s") (aref current-row j))))))
           (setq result (concat result "\n")))
     result))
 
@@ -253,5 +253,20 @@ it is bound to the current row and column"
        (setq ,result (progn ,@forms))
        (list (- (float-time) ,start-time)
              ,result))))
+
+(defvar advent/step nil "internal variable used to keep track of the steps")
+
+(defun advent/reset-steps ()
+  (setq advent/steps (cons 0 (float-time))))
+
+(defun advent/step (&optional interval)
+  (let ((now (float-time))
+        (start (cdr advent/steps))
+        (step (1+ (car advent/steps))))
+    (setq advent/steps (if (< (- now start) (or interval 1))
+                           (cons step start)
+                         (print (format "%d steps in %s seconds (%s/s)" step (- now start) (/ step (- now start))) )
+                         (redisplay)
+                         (cons 0 now)))))
 
 (provide 'advent-utils)
