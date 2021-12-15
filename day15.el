@@ -57,7 +57,9 @@
                               (car it))
                            (+ (cdr coord)
                               (cdr it)))
-                     '((-1 . 0) (1 . 0) (0 . -1) (0 . 1))))))
+                     ;'((-1 . 0) (1 . 0) (0 . -1) (0 . 1))
+                     '((1 . 0) (0 . 1))
+                     ))))
 
 (defun day15/get-unvisited-neighbors (grid current unvisited)
   "Returns a list of unvisited neighbors"
@@ -102,14 +104,45 @@
       )
     grid))
 
-(defun day15/part-1 (grid)
+(defun day15/solve-grid (grid)
   (let ((dijkstred (day15/dijkstra grid))
         (grid-size (day15/grid-size grid)))
     (day15/get-distance dijkstred (cons (1- (car grid-size))
                                         (1- (cdr grid-size))))))
 
+(defun day15/part-1 (grid)
+  (day15/solve-grid grid))
+
+(defun day15/increment-value (increment old-value)
+    (1+ (mod (+ (1- old-value) increment) 9)))
+
+(defun day15/copy-increased (grid dest increment start-row start-column)
+  (let ((grid-size (day15/grid-size grid)))
+    (loop for i below (car grid-size) do
+          (loop for j below (cdr grid-size) do
+                (let ((original-value (advent/grid-get grid (cons i j))))
+                  (advent/grid-set! dest
+                                    (cons (+ start-row i)
+                                          (+ start-column j))
+                                    (day15/increment-value increment original-value)))))))
+
+(defun day15/multiply-grid (grid)
+  (let* ((grid-size (day15/grid-size grid))
+        (new-grid (advent/make-grid (* 5 (car grid-size))
+                                    (* 5 (cdr grid-size))
+                                    nil)))
+    (loop for row-r below 5 do
+          (loop for column-r below 5 do
+                (let ((increment (+ row-r column-r)))
+                  (day15/copy-increased grid
+                                        new-grid
+                                        increment
+                                        (* (car grid-size) row-r)
+                                        (* (cdr grid-size) column-r)))))
+    new-grid))
+
 (defun day15/part-2 (grid)
-  (error "Not yet implemented"))
+  (day15/solve-grid (day15/multiply-grid grid)))
 
 (provide 'day15)
 

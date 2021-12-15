@@ -107,10 +107,20 @@ It binds:
 (defun advent/read--grid-line (line conversion-f)
   (apply #'vector (-map conversion-f (split-string line "" t))))
 
-(defun advent/read-grid (day type &optional conversion-f)
+(defun advent/lines-to-grid (lines &optional conversion-f)
   (apply #'vector
          (--map (advent/read--grid-line it (or conversion-f #'string-to-number))
-                (advent/read-problem-lines day type))))
+                lines)))
+
+(defun advent/read-grid (day type &optional conversion-f)
+  (advent/lines-to-grid (advent/read-problem-lines day type)
+                                        conversion-f))
+
+(defun advent/make-grid (n-rows n-columns value)
+  (let ((rows (make-vector n-rows nil)))
+    (loop for row below n-rows do
+          (aset rows row (make-vector n-columns value)))
+    rows))
 
 (defun advent/copy-grid (grid)
   "Returns a copy of the grid (cells are referenced)"
