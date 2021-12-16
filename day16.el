@@ -36,6 +36,16 @@
                  '()
                  (-map #'string-to-char (split-string line "" t))))
 
+(defun day16/decode-4 (packet-t-v)
+  (let* ((A (-split-at 5 (car packet-t-v)))
+         (B (-split-at 5 (cadr A)))
+         (C (-split-at 5 (cadr B))))
+    (assert (= 1 (caar A)))
+    (assert (= 1 (caar B)))
+    (assert (zerop (caar C)))
+    (let ((bits (append (rest (car A)) (rest (car B)) (rest (car C)))))
+      (string-to-number (apply #'concat (-map #'number-to-string bits)) 2))))
+
 (defun day16/get-3-digits-number (packet)
   (let ((parts (-split-at 3 packet)))
     (list (cadr parts)
@@ -53,7 +63,10 @@
 (defun day16/decode-packet (packet-t-v)
   (let ((payload (car packet-t-v))
         (type (elt packet-t-v 1))
-        (version (elt packet-t-v 2)))))
+        (version (elt packet-t-v 2)))
+    (case version
+      (4 (day16/decode-4 packet-t-v))
+      (t (error "Unsupported packet")))))
 
 (defun day16/decode-header (packet)
   "Returns a list (rest-of-packet type version) from a packet"
