@@ -48,7 +48,7 @@
     (loop for i below n do
           (let ((data-t-v-payload (day16/decode-packet remaining-data)))
             (setq remaining-data (car data-t-v-payload))
-            (setq packets (cons (rest data-t-v-payload) packets))))
+            (setq packets (cons (cons nil (rest data-t-v-payload)) packets))))
     (list remaining-data (nreverse packets))))
 
 (defun day16/get--size-data (content bits)
@@ -71,7 +71,7 @@
     (while payload
       (let ((data-t-v-payload (day16/decode-packet payload)))
         (setq payload (car data-t-v-payload))
-        (setq packets (cons (rest data-t-v-payload) packets))))
+        (setq packets (cons (cons nil (rest data-t-v-payload)) packets))))
     (list remaining-data (nreverse packets))))
 
 (defun day16/decode-id-1 (content)
@@ -166,9 +166,10 @@
            (apply #'+ (-map #'day16/sum-versions data))
          0))))
 
-
-(defun day16/part-1 (lines)
-  (error "Not yet implemented"))
+(defun day16/part-1 (line)
+  (day16/sum-versions
+   (day16/decode-packet
+    (day16/hex-to-bin line))))
 
 (defun day16/part-2 (lines)
   (error "Not yet implemented"))

@@ -11,9 +11,9 @@
       (expect (day16/part-1 "C0015000016115A2E0802F182340") :to-be 23))
     (it "replicates the example 4"
       (expect (day16/part-1 "A0016C880162017C3686B18A3D4780") :to-be 31))        
-    (xit "solves the problem"
-      (expect (day16/part-1 (advent/read-problem-lines 16 :problem))
-              :to-be 42)))
+    (it "solves the problem"
+      (expect (day16/part-1 (car (advent/read-problem-lines 16 :problem)))
+              :to-be 893)))
   (xdescribe "part 2"
     (it "replicates the example"
       (expect (day16/part-2 (advent/read-problem-lines 16 :example))
