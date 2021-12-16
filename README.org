@@ -44,6 +44,8 @@ if you have make installed, otherwise you can execute:
 emacs --eval "(setq load-path (cons \".\" load-path))" -batch -f package-initialize -f buttercup-run-discover
 #+end_src
 
+*Keep in mind that some tests are rather slow*: due to the lack of sorted tables for instance, day 15 takes more than 10' on my machine.
+
 If you want to compute the solution against your own input:
 
 1. overwrite the data file for the day of interest in the  =data= directory with your own problem input

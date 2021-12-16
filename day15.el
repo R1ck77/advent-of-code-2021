@@ -25,8 +25,7 @@
   (when (> (hash-table-count unvisited) (hash-table-count with-distance))
     (caar
      (sort (--filter (not (aref (cdr it) visited-idx))
-                     (--map (cons it (advent/grid-get grid it))
-                            (advent/-map-hash with-distance it-key)))
+                     (advent/-map-hash with-distance (cons it-key it-value)))
            (lambda (a b)
              (< (aref (cdr a) distance-idx)
                 (aref (cdr b) distance-idx)))))))
@@ -54,7 +53,6 @@
 
 (defun day15/set-visited! (grid coord)
   (advent/-update-grid-value! grid coord
-    ;;; TODO/FIXME stinks of bug
     (aset it visited-idx t)
     it))
 
