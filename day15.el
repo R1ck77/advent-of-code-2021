@@ -1,39 +1,42 @@
 (require 'dash)
 (require 'advent-utils)
 
-(defun day15/get--property (grid coord property)
-  (plist-get (advent/grid-get grid coord) property))
+;; :value :distance :visited
+
+(defconst value-idx 0)
+(defconst distance-idx 1)
+(defconst visited-idx 2)
+
+(defun day15/get--property (grid coord property-idx)
+  (aref (advent/grid-get grid coord) property-idx))
 
 (defun day15/get-value (grid coord)
-  (day15/get--property grid coord :value))
+  (day15/get--property grid coord value-idx))
 
 (defun day15/get-distance (grid coord)
-  (day15/get--property grid coord :distance))
+  (day15/get--property grid coord distance-idx))
 
 (defun day15/set-distance (grid coord new-distance)
   (advent/-update-grid-value! grid coord
-    (list :value (plist-get it :value)
-          :distance new-distance
-          :visited (plist-get it :visited))))
+    (aset it 1 new-distance)
+    it))
 
 (defun day15/pick-from-distance (grid unvisited neighbors with-distance)
   (when (> (hash-table-count unvisited) (hash-table-count with-distance))
     (caar
-     (sort (--filter (not (plist-get (cdr it) :visited))
+     (sort (--filter (not (aref (cdr it) visited-idx))
                      (--map (cons it (advent/grid-get grid it))
                             (advent/-map-hash with-distance it-key)))
            (lambda (a b)
-             (< (plist-get (cdr a) :distance)
-                (plist-get (cdr b) :distance))))))
-  )
+             (< (aref (cdr a) distance-idx)
+                (aref (cdr b) distance-idx)))))))
 
 (defun day15/pick-next-current (grid unvisited neighbors with-distance)
   ;; Check the direct neighbors first. Should help…
   (or (day15/pick-from-distance grid unvisited neighbors with-distance)
    (caar
     (sort (--filter (cdr it)
-                    (--map (cons it (plist-get (advent/grid-get grid it) :distance))
-                           (advent/-map-hash unvisited it-key)))
+                    (advent/-map-hash unvisited (cons it-key (aref it-value distance-idx))))
           (lambda (a b)
             (< (cdr a)
                (cdr b)))))))
@@ -43,7 +46,7 @@
   (or (day15/pick-from-distance grid unvisited neighbors with-distance)
    (caar
     (sort (--filter (cdr it)
-                    (--map (cons it (plist-get (advent/grid-get grid it) :distance))
+                    (--map (cons it (aref (advent/grid-get grid it) distance-idx))
                            (advent/-map-hash unvisited it-key)))
           (lambda (a b)
             (< (cdr a)
@@ -51,9 +54,9 @@
 
 (defun day15/set-visited! (grid coord)
   (advent/-update-grid-value! grid coord
-    (list :value (plist-get it :value)
-          :distance (plist-get it :distance)
-          :visited t)))
+    ;;; TODO/FIXME stinks of bug
+    (aset it visited-idx t)
+    it))
 
 (defun day15/remove-current! (grid current unvisited with-distance)
   (day15/set-visited! grid current)
@@ -61,12 +64,14 @@
   (remhash current with-distance))
 
 (defun day15/update-distance! (grid current other with-distance)
-  (let ((computed-distance (+ (day15/get-distance grid current)
-                              (day15/get-value grid other)))
-        (previous-distance (day15/get-distance grid other)))
+  (let* ((other-value (advent/grid-get grid other))
+        (computed-distance (+ (day15/get-distance grid current)
+                              (aref other-value value-idx)))
+        (previous-distance (aref other-value distance-idx)))
+    ;;; Optimization opportunity, also bug
     (day15/set-distance grid other (min (or previous-distance computed-distance)
                                         computed-distance))    
-    (advent/put with-distance other t)))
+    (advent/put with-distance other other-value)))
 
 (defun day15/valid-coordinate? (coord limit)
   (and
@@ -95,10 +100,8 @@
 (defun day15/set--initial-grid! (grid current)
   "Set all nodes to 'unvisited' (cached), mark the initial distances"
   (let ((grid (advent/copy-grid grid)))    
-    (advent/-update-grid! grid
-      (list :value it :distance nil :visited nil))
-    (advent/-update-grid-value! grid current
-      (list :value (plist-get it :value) :distance 0 :visited nil))
+    (advent/-update-grid! grid (apply #'vector (list it nil nil)))
+    (advent/-update-grid-value! grid current (apply #'vector (list (aref it value-idx) 0 nil)))
     grid))
 
 (defun day15/create--unvisited-set (grid)
@@ -106,7 +109,8 @@
         (grid-size (day15/grid-size grid)))
    (loop for i below (car grid-size) do
          (loop for j below (cdr grid-size) do
-               (advent/put unvisited (cons i j) t)))
+               (let ((unvisited-coord (cons i j)))
+                (advent/put unvisited unvisited-coord (advent/grid-get grid unvisited-coord)))))
    unvisited))
 
 (defun day15/debug--grid (grid property)
@@ -130,7 +134,7 @@
         (--each neighbors (day15/update-distance! grid current it with-distance))
         (day15/remove-current! grid current unvisited with-distance)
         (setq current (day15/pick-next-current grid unvisited neighbors with-distance)))
-      (comment (day15/debug--grid grid :distance))
+      (comment (day15/debug--grid grid distance-idx))
       (advent/step))
     grid))
 
