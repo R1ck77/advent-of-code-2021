@@ -68,4 +68,4 @@
               :to-be 315))
     (it "solves the problem"
       (expect (day15/part-2 (advent/read-grid 15 :problem #'string-to-number))
-              :to-be 42))))
+              :to-be 2844))))
