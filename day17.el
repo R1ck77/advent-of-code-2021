@@ -1,9 +1,6 @@
 (require 'dash)
 (require 'advent-utils)
 
-;;; Arbitrary! I have no idea whether a solution exists for vy = 1e39. Is there a mathematical proof?
-(defconst max-vy-search 201)
-
 (defun day17/read-target (line)
   (string-match "target area: x=\\([-0-9]+\\)\.\.\\([-0-9]+\\), y=\\([-0-9]+\\)\.\.\\([-0-9]+\\)" line)
   (list :x-min (string-to-number (match-string 1 line))
@@ -24,21 +21,18 @@
       (setq vy (1- vy))
       (setq overshot (< pos (plist-get target :y-min)))
       (setq hit (and (not overshot)
-                     (<= pos (plist-get target :y-max))))
-      (when hit
-        (print
-         (format "Hit at %d!" vy))
-        (redisplay)))
+                     (<= pos (plist-get target :y-max)))))
     (and (not overshot) (list vy max-pos))))
 
-(defun day17/compute-max-vy (target top-vy)
-  (let ((result (car (nreverse (-non-nil 
-                   (--map (day17/vertical-hit? target it)
-                          (number-sequence 0 (or top-vy 1001))))))))
-   (cadr result)))
+(defun day17/compute-max-vy (target)
+  (let ((top-vy (1+ (- (plist-get target :y-min)))))
+    (let ((result (car (nreverse (-non-nil 
+                                        (--map (day17/vertical-hit? target it)
+                                               (number-sequence 0 (or top-vy 1001))))))))
+            (cadr result))))
 
 (defun day17/part-1 (line)
-  (day17/compute-max-vy (day17/read-target line) max-vy-search))
+  (day17/compute-max-vy (day17/read-target line)))
 
 (defun day17/max-x-speed (target)
   "Maximum x speed that *will* overshot the target"
@@ -70,8 +64,6 @@
 (defun day17/compute-top (vy)
   (assert (> vy 0))
   (/ (* vy (1+ vy)) 2))
-
-(defun day17/compute-max-y-speed (target))
 
 (defun day17/overshot? (target x-y)
   (or (> (car x-y) (plist-get target :x-max))
@@ -121,7 +113,7 @@
     (let ((vx-min (day17/compute-min-x-speed target))
           (vx-max (day17/max-x-speed target))
           (vy-min (day17/min-y-speed target))
-          (vy-max (day17/compute-max-vy target max-vy-search)))
+          (vy-max (day17/compute-max-vy target)))
       (length (day17/compute-all-hit target vx-min vx-max vy-min vy-max)))))
 
 (provide 'day17)
