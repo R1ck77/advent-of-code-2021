@@ -16,23 +16,47 @@
       (setq transformed (funcall f value)))
     transformed))
 
-(defun day18/explode-left (number)
-  number)
+(defun day18/intermission (value &optional level)
+  "Find the leftmost 4th level"
+  (unless (numberp value)
+    (let ((level (or level 0)))
+      (when (<= level 4)       
+          (or (day18/intermission (car value) (1+ level))
+              (day18/intermission (cadr value) (1+ level)))
+          value))))
 
-(defun day18/reverse (number)
-  (if (numberp number)
-      number
-    (list (day18/reverse (cadr number))
-          (day18/reverse (car number)))))
+(defun day18/acc--parentship (value level left right)
+  (if (numberp value)
+      (vector number)
+    (let ((next-level (1+ level))))
+    (list (vector level left right)
+          (let ((new-left (day18/acc--parentship (car value) next-level left wrong-right))
+                (new-right(day18/acc--parentship (cadr value) next-level wrong-left right)))
+            (aset new-left))
+          (list new-left new-right))))
 
-(defun day18/explode-right (number)
-  (day18/reverse (day18/explode-left (day18/reverse number))))
+(defun day18/get--leftmost-value (value)
+  (if (numberp value)
+      value
+    (day18/get--leftmost-value (car value))))
 
-(defun day18/explode-1 (number)
-  (day18/explode-right (day18/explode-left number)))
+(defun day18/explode-left (value)
+  value)
 
-(defun day18/explode (number)
-  (day18/recur-until-equal number #'day18-explode-1))
+(defun day18/reverse (value)
+  (if (numberp value)
+      value
+    (list (day18/reverse (cadr value))
+          (day18/reverse (car value)))))
+
+(defun day18/explode-right (value)
+  (day18/reverse (day18/explode-left (day18/reverse value))))
+
+(defun day18/explode-1 (value)
+  (day18/explode-right (day18/explode-left value)))
+
+(defun day18/explode (value)
+  (day18/recur-until-equal value #'day18-explode-1))
 
 (defun day18/split-number (number)
   (let ((remainder (mod number 2))
