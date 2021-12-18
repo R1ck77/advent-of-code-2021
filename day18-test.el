@@ -21,12 +21,11 @@
       (it "maintains the original number when exploding when unnecessary"
         (expect (day18/explode-1 (day18/read-number "[1,[6,3]]")) :to-equal (day18/read-number "[1,[6,3]]")))      
       (it "can explode a number correctly"
-        (expect (day18/explode-1 (day18/read-number "[[[[[9,8],1],2],3],4]") :to-equal (day18/read-number "[[[[0,9],2],3],4]")))
-        (expect (day18/explode-1 (day18/read-number "[7,[6,[5,[4,[3,2]]]]]") :to-equal (day18/read-number "[7,[6,[5,[7,0]]]]")))
-        (expect (day18/explode-1 (day18/read-number "[[6,[5,[4,[3,2]]]],1]") :to-equal (day18/read-number "[[6,[5,[7,0]]],3]")))
-        (expect (day18/explode-1 (day18/read-number "[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]") :to-equal (day18/read-number "[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]")))
-        (expect (day18/explode-1 (day18/read-number "") :to-equal (day18/read-number "")))
-        (expect (day18/explode-1 (day18/read-number "[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]") :to-equal (day18/read-number "[[3,[2,[8,0]]],[9,[5,[7,0]]]]"))))
+        (expect (day18/explode-1 (day18/read-number "[[[[[9,8],1],2],3],4]")) :to-equal (day18/read-number "[[[[0,9],2],3],4]"))
+        (expect (day18/explode-1 (day18/read-number "[7,[6,[5,[4,[3,2]]]]]")) :to-equal (day18/read-number "[7,[6,[5,[7,0]]]]"))
+        (expect (day18/explode-1 (day18/read-number "[[6,[5,[4,[3,2]]]],1]")) :to-equal (day18/read-number "[[6,[5,[7,0]]],3]"))
+        (expect (day18/explode-1 (day18/read-number "[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]")) :to-equal (day18/read-number "[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]"))
+        (expect (day18/explode-1 (day18/read-number "[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]")) :to-equal (day18/read-number "[[3,[2,[8,0]]],[9,[5,[7,0]]]]")))
       (it "maintains the original number when splitting when unnecessary"
         (expect (day18/split (day18/read-number "[1,[6,3]]")) :to-equal (day18/read-number "[1,[6,3]]")))
       (it "can split a number correctly"
@@ -44,6 +43,10 @@
                 :to-equal (day18/read-number "[[[[3,0],[5,3]],[4,4]],[5,5]]"))
         (expect (day18/sum-all (-map #'day18/read-number (list "[1,1]" "[2,2]" "[3,3]" "[4,4]" "[5,5]" "[6,6]")))
                 :to-equal (day18/read-number "[[[[5,0],[7,4]],[5,5]],[6,6]]")))
+      (it "can do a complex sum correctly"
+          (expect (day18/sum (day18/read-number "[[[[4,3],4],4],[7,[[8,4],9]]]")
+                             (day18/read-number "[1,1]"))
+                  :to-equal (day18/read-number "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]")))      
       (it "can do a chain of sums correctly"
         (expect (day18/sum-all (-map #'day18/read-number (list "[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]"
                                                                "[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]"

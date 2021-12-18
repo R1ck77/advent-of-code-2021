@@ -16,47 +16,51 @@
       (setq transformed (funcall f value)))
     transformed))
 
-(defun day18/intermission (value &optional level)
-  "Find the leftmost 4th level"
-  (unless (numberp value)
-    (let ((level (or level 0)))
-      (when (<= level 4)       
-          (or (day18/intermission (car value) (1+ level))
-              (day18/intermission (cadr value) (1+ level)))
-          value))))
+(defun day18/add-to-vector! (n value)
+  (aset value 0 (+ n (aref value 0))))
 
-(defun day18/acc--parentship (value level left right)
+(defun day18/add-left-to-pair! (n value)
+  (if (vectorp value)
+      (day18/add-to-vector! n value)
+    (day18/add-to-vector! n (cadr value))))
+
+(defun day18/add-right-to-pair! (n value)
+  (if (vectorp value)
+      (day18/add-to-vector! n value)
+    (day18/add-to-vector! n (car value))))
+
+(defun day18/explode-wrapped! (wrapped)
+  "Explode the first pair, returns the original list if nothing to do"
+  (let* ((flattened (-flatten-n 3 wrapped))
+        (index-of-list (-find-index #'listp flattened)))
+    (when index-of-list
+      (let* ((pair (elt flattened index-of-list))
+             (left (aref (car pair) 0))
+             (right (aref (cadr pair) 0)))
+        (setcar pair :boom)
+        (if (> index-of-list 0) (day18/add-left-to-pair! left (elt flattened (1- index-of-list))))
+        (if-let ((right-hand (elt flattened (1+ index-of-list))))
+            (day18/add-right-to-pair! right right-hand))))
+    wrapped))
+
+(defun day18/unwrap (wrapped)
+  (cond
+   ((vectorp wrapped) (aref wrapped 0))
+   ((and (listp wrapped) (eq (car wrapped) :boom)) 0)
+   ((listp wrapped) (list (day18/unwrap (car wrapped)) (day18/unwrap (cadr wrapped))))
+   (t (error (format "Unexpected element: '%s'" wrapped)))))
+
+(defun day18/wrap-numbers (value)
   (if (numberp value)
-      (vector number)
-    (let ((next-level (1+ level))))
-    (list (vector level left right)
-          (let ((new-left (day18/acc--parentship (car value) next-level left wrong-right))
-                (new-right(day18/acc--parentship (cadr value) next-level wrong-left right)))
-            (aset new-left))
-          (list new-left new-right))))
-
-(defun day18/get--leftmost-value (value)
-  (if (numberp value)
-      value
-    (day18/get--leftmost-value (car value))))
-
-(defun day18/explode-left (value)
-  value)
-
-(defun day18/reverse (value)
-  (if (numberp value)
-      value
-    (list (day18/reverse (cadr value))
-          (day18/reverse (car value)))))
-
-(defun day18/explode-right (value)
-  (day18/reverse (day18/explode-left (day18/reverse value))))
+      (vector value)
+    (list (day18/wrap-numbers (car value))
+          (day18/wrap-numbers (cadr value)))))
 
 (defun day18/explode-1 (value)
-  (day18/explode-right (day18/explode-left value)))
+  (day18/unwrap (day18/explode-wrapped! (day18/wrap-numbers value))))
 
 (defun day18/explode (value)
-  (day18/recur-until-equal value #'day18-explode-1))
+  (day18/recur-until-equal value #'day18/explode-1))
 
 (defun day18/split-number (number)
   (let ((remainder (mod number 2))
@@ -76,8 +80,11 @@
 (defun day18/reduce (number)
   (day18/recur-until-equal number #'day18/reduce-1))
 
+(defun day18/sum (a b)
+  (day18/reduce (list a b)))
+
 (defun day18/sum-all (numbers)
-  (day18/reduce (--reduce (list acc it) numbers)))
+  (--reduce-from (day18/sum acc it) (car numbers) (rest numbers)))
 
 (defun day18/magnitude (number)
   (if (numberp number)
@@ -86,10 +93,12 @@
        (* 2 (day18/magnitude (cadr number))))))
 
 (defun day18/part-1 (lines)
-  (day18/magnidue
+  (day18/magnitude
    (day18/sum-all (-map #'day18/read-number lines))))
 
 (defun day18/part-2 (lines)
   (error "Not yet implemented"))
 
 (provide 'day18)
+
+(setq v (day18/read-number "[[[[[4,3],4],4],[7,[[8,4],9]]],[1,1]]"))
