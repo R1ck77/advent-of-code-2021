@@ -8,6 +8,10 @@
                                           (s-replace "[" "(" line)))))
     (eval (car (read-from-string (concat "'" clean-text))))))
 
+(defun day18/print (number)
+  (if (numberp number) (number-to-string number)
+    (concat "[" (day18/print (car number)) "," (day18/print (cadr number)) "]")))
+
 (defun day18/recur-until-equal (value f)
   (let ((transformed value))
     (setq value nil)
@@ -74,8 +78,24 @@
         value
       (day18/split-number value))))
 
+(defun day18/recursive--split-1 (value &optional reduced)
+  (if reduced
+      (list value, reduced)
+    (if (listp value)
+        (let ((first-half (day18/recursive--split-1 (car value))))
+          (if (cadr first-half)
+              (list (list (car first-half) (cadr value)) t)
+            (let ((second-half (day18/recursive--split-1 (cadr value))))
+              (list (list (car value) (car second-half)) (cadr second-half)))))
+      (if (< value 10)
+          (list value nil)
+        (list (day18/split-number value) t)))))
+
+(defun day18/split-1 (value)
+  (car (day18/recursive--split-1 value)))
+
 (defun day18/reduce-1 (number)
-  (day18/split (day18/explode number)))
+  (day18/split-1 (day18/explode number)))
 
 (defun day18/reduce (number)
   (day18/recur-until-equal number #'day18/reduce-1))
@@ -84,7 +104,7 @@
   (day18/reduce (list a b)))
 
 (defun day18/sum-all (numbers)
-  (--reduce-from (day18/sum acc it) (car numbers) (rest numbers)))
+  (-reduce #'day18/sum numbers))
 
 (defun day18/magnitude (number)
   (if (numberp number)
@@ -101,4 +121,3 @@
 
 (provide 'day18)
 
-(setq v (day18/read-number "[[[[[4,3],4],4],[7,[[8,4],9]]],[1,1]]"))

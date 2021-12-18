@@ -46,7 +46,11 @@
       (it "can do a complex sum correctly"
           (expect (day18/sum (day18/read-number "[[[[4,3],4],4],[7,[[8,4],9]]]")
                              (day18/read-number "[1,1]"))
-                  :to-equal (day18/read-number "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]")))      
+                  :to-equal (day18/read-number "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]")))
+      (it "can do a complex sum correctly (2)"
+        (expect (day18/sum (day18/read-number "[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]")
+                           (day18/read-number "[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]"))
+                :to-equal (day18/read-number "[[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]]")))
       (it "can do a chain of sums correctly"
         (expect (day18/sum-all (-map #'day18/read-number (list "[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]"
                                                                "[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]"
@@ -62,9 +66,9 @@
     (it "replicates the example"
       (expect (day18/part-1 (advent/read-problem-lines 18 :example))
               :to-be 4140 ))
-    (xit "solves the problem"
+    (it "solves the problem"
       (expect (day18/part-1 (advent/read-problem-lines 18 :problem))
-              :to-be 42)))
+              :to-be 3725)))
   (xdescribe "part 2"
     (it "replicates the example"
       (expect (day18/part-2 (advent/read-problem-lines 18 :example))
