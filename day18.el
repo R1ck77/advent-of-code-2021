@@ -116,8 +116,26 @@
   (day18/magnitude
    (day18/sum-all (-map #'day18/read-number lines))))
 
+(defun day18/sum-value (a b)
+  (day18/magnitude (day18/sum a b)))
+
+(defun day18/cluster-multiplication (numbers)
+  (let ((N (length numbers))
+        (results nil))
+    (loop for i from 0 below N do
+          (loop for j from 0 below N do
+                (unless (= i j)
+                  (let ((a (elt numbers i))
+                        (b (elt numbers j)))
+                    (let ((sum-1 (day18/sum-value a b))
+                          (sum-2 (day18/sum-value b a)))
+                      (push sum-1 results)
+                      (push sum-2 results))))))
+    results))
+
+
 (defun day18/part-2 (lines)
-  (error "Not yet implemented"))
+  (apply #'max (day18/cluster-multiplication (-map #'day18/read-number lines))))
 
 (provide 'day18)
 
