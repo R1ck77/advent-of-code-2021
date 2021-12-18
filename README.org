@@ -9,7 +9,7 @@ Just clone the repository: it doesn't require any setup at all.
 
 - Emacs (obviously) with the following packages installed:
   - buttercup
-  - dash
+  - dash and s  
 - make (optionally)
 
 ** How to run the samples
