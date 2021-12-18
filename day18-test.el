@@ -2,8 +2,12 @@
 (require 'buttercup)
 
 (describe "Day 18"
+  (describe "read"
+    (it "can read expressions correctly"
+      (expect (day18/read-number "[1,2]") :to-equal '(1 2))
+      (expect (day18/read-number "[[1,2],[[3,4],5]]") :to-equal '((1 2) ((3 4) 5)))))
   (describe "part 1"
-    (describe "operations"      
+    (describe "operations"
       (it "performs the magnitude operation correctly"
         (expect (day18/magnitude (day18/read-number "[[1,2],[[3,4],5]]")) :to-be 143)
         (expect (day18/magnitude (day18/read-number "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]")) :to-be 1384)
