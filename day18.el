@@ -12,9 +12,17 @@
   ;;TODO/FIXME
   number)
 
-(defun day18/split-1 (number)
-  ;;TODO/FIXME
-  number)
+(defun day18/split-number (number)
+  (let ((remainder (mod number 2))
+        (division (/ number 2)))
+    (list division (+ division remainder))))
+
+(defun day18/split (value)
+  (if (listp value)
+      (-map #'day18/split value)
+    (if (< value 10)
+        value
+      (day18/split-number value))))
 
 (defun day18/reduce (number)
   ;;TODO/FIXME

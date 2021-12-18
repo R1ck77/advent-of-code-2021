@@ -28,10 +28,10 @@
         (expect (day18/explode-1 (day18/read-number "") :to-equal (day18/read-number "")))
         (expect (day18/explode-1 (day18/read-number "[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]") :to-equal (day18/read-number "[[3,[2,[8,0]]],[9,[5,[7,0]]]]"))))
       (it "maintains the original number when splitting when unnecessary"
-        (expect (day18/split-1 (day18/read-number "[1,[6,3]]")) :to-equal (day18/read-number "[1,[6,3]]")))
+        (expect (day18/split (day18/read-number "[1,[6,3]]")) :to-equal (day18/read-number "[1,[6,3]]")))
       (it "can split a number correctly"
-        (expect (day18/split-1 (day18/read-number "[1,[6,13]]")) :to-equal (day18/read-number "[1,[6,[6,7]]]"))
-        (expect (day18/split-1 (day18/read-number "[1,[6,10]]")) :to-equal (day18/read-number "[1,[6,[5,5]]]]")))
+        (expect (day18/split (day18/read-number "[1,[6,13]]")) :to-equal (day18/read-number "[1,[6,[6,7]]]"))
+        (expect (day18/split (day18/read-number "[1,[6,10]]")) :to-equal (day18/read-number "[1,[6,[5,5]]]]")))
       (it "can reduce a number correctly"
         (expect (day18/reduce (day18/read-number "[[[[[4,3],4],4],[7,[[8,4],9]]],[1,1]]")) :to-equal (day18/read-number "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]")))
       (it "can do pairwise sums correctly"
