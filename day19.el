@@ -109,7 +109,7 @@ Can be used to move a point from the 'other' set to the 'reference' set"
 
 (defun day19/cached-two-scanners-match? (cache scans idx1 idx2)
   (if (< idx2 idx1)
-      (day19/cached-two-scanners-match? (cache scans idx2 idx1))
+      (day19/cached-two-scanners-match? cache scans idx2 idx1)
     (let* ((key (cons idx1 idx2))
            (match (advent/get cache key)))
       (if match ; the value is cached: return it!
@@ -135,29 +135,49 @@ Can be used to move a point from the 'other' set to the 'reference' set"
 (defun day19/read-scans (blocks)
   (-map #'day19/read-scan blocks))
 
-(defun day19/find-pair (scans ref indices &optional cache)
-  "Find the pair between the scan of index 'ref' and the remaining scans in 'indices'
+(defun day19/find-pairs (cache scans ref indices)
+  "Find the pairs between the scan of index 'ref' and the remaining scans in 'indices'
 
 Returns a plist (:transforms transform :index matching-index :remaining remaining-indices)"
   (let ((remaining-checks indices)
-        (match))
-    (while (and (not match) remaining-checks)
+        (matches))
+    (while remaining-checks
       (when-let* ((current-index (pop remaining-checks))
-                  (transform-pair (day19/cached-two-scanners-match? (or cache (advent/table)) scans ref current-index)))
-        (setq match (list :transforms transform-pair
+                  (transform-pair (day19/cached-two-scanners-match? cache  scans ref current-index)))
+        (push (list :transforms transform-pair
                           :index current-index
-                          :remaining (-remove-item current-index indices)))))
-    (assert match)
-    match))
+                          :remaining (-remove-item current-index indices))
+              matches)))
+    matches))
+
+(defun day19/find-connections (cache scans sequence remaining)
+  (print (format "%s %s ->" (-map #'car sequence) remaining))
+  (redisplay)
+  (if (not remaining)
+      ;; success: I found the sequence
+      sequence
+    (let ((new-results (day19/find-pairs cache scans (caar sequence) remaining)))
+      (print (format "    ... %s" (--map (plist-get it :index) new-results)))
+      ;; otherwise: dead end
+      (when new-results
+        (let ((new-candidates (-non-nil (--map (let ((new-sequence (cons (list (plist-get it :index)
+                                                                               (plist-get it :transforms))
+                                                                         sequence))
+                                                     (new-remaining (plist-get it :remaining)))
+                                                 (day19/find-connections cache scans new-sequence new-remaining))
+                                               new-results))))
+          (car new-candidates))))))
 
 (defun day19/find-chain (scans)
   "Returns a list of pairs of transforms"
   (let ((all-indices (rest (-map #'1- (number-sequence 1 (length scans)))))
-        (sequence (list (list 0 nil))))
+        (sequence (list (list 0 nil)))
+        (cache (advent/table)))
     (while all-indices
       (print (-map #'car sequence))
       (redisplay)
-      (let ((new-result (day19/find-pair scans
+      (let ((new-result (day19/find-pairs cache
+                                          scans
                                          (caar sequence)
                                          all-indices)))
         (push (list (plist-get new-result :index)
