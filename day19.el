@@ -122,6 +122,38 @@ Can be used to move a point from the 'other' set to the 'reference' set"
 (defun day19/read-scans (blocks)
   (-map #'day19/read-scan blocks))
 
+(defun day19/find-pair (scans ref indices)
+  "Find the pair between the scan of index 'ref' and the remaining scans in 'indices'
+
+Returns a plist (:transforms transform :index matching-index :remaining remaining-indices)"
+  (let ((remaining-checks indices)
+        (reference-scans (elt scans ref))
+        (match))
+    (while (and (not match) remaining-checks)
+      (when-let* ((current-index (pop remaining-checks))
+                  (transform-pair (day19/two-scanners-match? reference-scans (elt scans current-index))))
+        (setq match (list :transforms transform-pair
+                          :index current-index
+                          :remaining (-remove-item current-index indices)))))
+    (assert match)
+    match))
+
+(defun day19/find-chain (scans)
+  "Returns a list of pairs of transforms"
+  (let ((all-indices (rest (-map #'1- (number-sequence 1 (length scans)))))
+        (sequence (list (list 0 nil))))
+    (while all-indices
+      (print (-map #'car sequence))
+      (redisplay)
+      (let ((new-result (day19/find-pair scans
+                                         (caar sequence)
+                                         all-indices)))
+        (push (list (plist-get new-result :index)
+                    (plist-get new-result :transforms))
+              sequence)
+        (setq all-indices (plist-get new-result :remaining))))
+    sequence))
+
 (defun day19/build-list (scans))
 
 (defun day19/part-1 (lines)
@@ -131,3 +163,6 @@ Can be used to move a point from the 'other' set to the 'reference' set"
   (error "Not yet implemented"))
 
 (provide 'day19)
+
+(setq example (day19/read-scans (advent/read-blocks-of-lines 19 :example)))
+(setq problem (day19/read-scans (advent/read-blocks-of-lines 19 :problem)))
