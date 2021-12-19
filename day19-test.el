@@ -27,25 +27,25 @@
         (expect (day19/two-scanners-match? (elt day19-test/example 2)
                                            (elt day19-test/example 4))
                 :not :to-be nil))
-      (it "can detect the pairing of 2 and 3"
-        (expect (day19/two-scanners-match? (elt day19-test/example 2)
+      (it "can detect the pairing of 1 and 3"
+        (expect (day19/two-scanners-match? (elt day19-test/example 1)
                                            (elt day19-test/example 3))
                :not :to-be nil)
         (expect (day19/two-scanners-match? (elt day19-test/example 3)
-                                           (elt day19-test/example 2))
+                                           (elt day19-test/example 1))
                :not :to-be nil))      
-      (it "can detect the lack of pairing between 0 and 4"
-        (expect (day19/two-scanners-match? (elt day19-test/example 0)
+      (it "can detect the lack of pairing between 3 and 4"
+        (expect (day19/two-scanners-match? (elt day19-test/example 3)
                                            (elt day19-test/example 4))
                :to-be nil)
-        (expect (day19/two-scanners-match? (elt day19-test/example 4)
-                                           (elt day19-test/example 0))
-                :to-be nil))
-      (it "can detect the lack of pairing between 1 and 3"
-        (expect (day19/two-scanners-match? (elt day19-test/example 1)
-                                           (elt day19-test/example 3))
-               :to-be nil)
         (expect (day19/two-scanners-match? (elt day19-test/example 3)
+                                           (elt day19-test/example 4))
+                :to-be nil))
+      (it "can detect the lack of pairing between 1 and 2"
+        (expect (day19/two-scanners-match? (elt day19-test/example 1)
+                                           (elt day19-test/example 2))
+               :to-be nil)
+        (expect (day19/two-scanners-match? (elt day19-test/example 2)
                                            (elt day19-test/example 1))
                 :to-be nil))
       (it "can detect the lack of pairing between 4 and 3"
