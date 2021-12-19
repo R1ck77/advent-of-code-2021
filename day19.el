@@ -48,18 +48,21 @@
          (< z 1000)
          point)))
 
+(defun day19/visible-by-other? (point reference))
+
 (defun day19/two-beacons-match-for-translation? (ref other translation)
   "Returns the translation if it results in at least 12 matches between ref and other or more"
-  (let ((groups (-split-at 10 (-filter #'day19/visible-beacon? (--map (apply translation it) other)))))
-    (let ((primary-group (cadr groups))
-          (secondary-group (car groups)))
-      (if (>= (length primary-group) 2)
-       (let ((primary-matches (day19/count-matches ref primary-group)))
-         (unless (or (< primary-matches 2)
-                     ;; don't bother if the secondary group + 2 can't make to 12
-                     (< (+ primary-matches (length secondary-group)) 12))
-           (let ((all-matches (+ primary-matches (day19/count-matches ref secondary-group))))
-             (and (>= all-matches 12) translation))))))))
+  (if (>= (length ref) 12) ;; if I have reduce ref so much, forget about it!
+      (let ((groups (-split-at 10 (-filter #'day19/visible-beacon? (--map (apply translation it) other)))))
+           (let ((primary-group (cadr groups))
+                 (secondary-group (car groups)))
+             (if (>= (length primary-group) 2)
+                 (let ((primary-matches (day19/count-matches ref primary-group)))
+                   (unless (or (< primary-matches 2)
+                               ;; don't bother if the secondary group + 2 can't make to 12
+                               (< (+ primary-matches (length secondary-group)) 12))
+                     (let ((all-matches (+ primary-matches (day19/count-matches ref secondary-group))))
+                       (and (>= all-matches 12) translation)))))))))
 
 (defun day19/create-translation (dest src)
   "Creates a transform that turns src point into dst points
@@ -73,12 +76,8 @@ Can be used to move a point from the 'other' set to the 'reference' set"
             (+ y dy)
             (+ z dz)))))
 
-(defun day19/create-valid-translation (dest src)
-  "Creates a transform with 'create-translation' but returns nil if the point is not valid"
-  (lexical-let ((transform (day19/create-translation dest src)))
-    (lambda (x y z)
-      (let ((result (funcall transform x y z)))
-        (day19/visible-beacon? result)))))
+(defun day19/filter-ref (ref inverse-translation)
+  (--filter (day19/visible-beacon? (apply inverse-translation it)) ref))
 
 (defun day19/oriented-beacons--match? (ref other)
   "Given the two groups of beacons in the same orientation, return the transform if there is a match"
@@ -93,7 +92,7 @@ Can be used to move a point from the 'other' set to the 'reference' set"
           (let* ((src-point (pop source-points))
                  (translation (day19/create-translation dst-point src-point)))
             ;; if there is at least a 2 point match, add it to the 
-            (when (day19/two-beacons-match-for-translation? ref other translation)
+            (when (day19/two-beacons-match-for-translation? (day19/filter-ref ref (day19/create-translation src-point dst-point)) other translation)
               (setq valid-translation translation))))))
     valid-translation))
 
@@ -107,6 +106,20 @@ Can be used to move a point from the 'other' set to the 'reference' set"
         (when-let ((translation (day19/oriented-beacons--match? ref rotated-other)))
           (setq matching-transforms (cons current-rotation translation)))))
     matching-transforms))
+
+(defun day19/cached-two-scanners-match? (cache scans idx1 idx2)
+  (if (< idx2 idx1)
+      (day19/cached-two-scanners-match? (cache scans idx2 idx1))
+    (let* ((key (cons idx1 idx2))
+           (match (advent/get cache key)))
+      (if match ; the value is cached: return it!
+          (not (zerop match))
+        ;; otherwise compute it
+        (let ((result (day19/two-scanners-match? (elt scans idx1)
+                                                 (elt scans idx2))))
+          (advent/put cache key (if result 1 0))
+          result)))))
+
 
 (defun day19/read-coordinate (line)
   (-map #'string-to-number
@@ -122,16 +135,15 @@ Can be used to move a point from the 'other' set to the 'reference' set"
 (defun day19/read-scans (blocks)
   (-map #'day19/read-scan blocks))
 
-(defun day19/find-pair (scans ref indices)
+(defun day19/find-pair (scans ref indices &optional cache)
   "Find the pair between the scan of index 'ref' and the remaining scans in 'indices'
 
 Returns a plist (:transforms transform :index matching-index :remaining remaining-indices)"
   (let ((remaining-checks indices)
-        (reference-scans (elt scans ref))
         (match))
     (while (and (not match) remaining-checks)
       (when-let* ((current-index (pop remaining-checks))
-                  (transform-pair (day19/two-scanners-match? reference-scans (elt scans current-index))))
+                  (transform-pair (day19/cached-two-scanners-match? (or cache (advent/table)) scans ref current-index)))
         (setq match (list :transforms transform-pair
                           :index current-index
                           :remaining (-remove-item current-index indices)))))
