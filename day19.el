@@ -53,10 +53,13 @@
   (let ((groups (-split-at 10 (-filter #'day19/visible-beacon? (--map (apply translation it) other)))))
     (let ((primary-group (cadr groups))
           (secondary-group (car groups)))
-      (let ((primary-matches (day19/count-matches ref primary-group)))
-        (unless (< primary-matches 2)
-          (let ((all-matches (+ primary-matches (day19/count-matches ref secondary-group))))
-            (and (>= all-matches 12) translation)))))))
+      (if (>= (length primary-group) 2)
+       (let ((primary-matches (day19/count-matches ref primary-group)))
+         (unless (or (< primary-matches 2)
+                     ;; don't bother if the secondary group + 2 can't make to 12
+                     (< (+ primary-matches (length secondary-group)) 12))
+           (let ((all-matches (+ primary-matches (day19/count-matches ref secondary-group))))
+             (and (>= all-matches 12) translation))))))))
 
 (defun day19/create-translation (dest src)
   "Creates a transform that turns src point into dst points
