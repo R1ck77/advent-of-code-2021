@@ -5,7 +5,7 @@
 
 (describe "Day 19"
   (describe "part 1"
-    (describe "scan pairs detection"
+    (xdescribe "scan pairs detection"
       (it "can detect the pairing of 1 and 0"
         (expect (day19/two-scanners-match? (elt day19-test/example 0)
                                            (elt day19-test/example 1))
@@ -55,10 +55,10 @@
         (expect (day19/two-scanners-match? (elt day19-test/example 3)
                                            (elt day19-test/example 4))
                :to-be nil)))
-    (xit "replicates the example"
+    (it "replicates the example"
       (expect (day19/part-1 (advent/read-blocks-of-lines 19 :example))
               :to-be 79 ))
-    (xit "solves the problem"
+    (it "solves the problem"
       (expect (day19/part-1 (advent/read-blocks-of-lines 19 :problem))
               :to-be 42)))
   (xdescribe "part 2"
