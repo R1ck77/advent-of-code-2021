@@ -1,105 +1,61 @@
 (require 'day19)
 (require 'buttercup)
 
-(defconst scanner-0 (day19/read-scan '("--- scanner 0 ---"
-                                       "404,-588,-901"
-                                       "528,-643,409"
-                                       "-838,591,734"
-                                       "390,-675,-793"
-                                       "-537,-823,-458"
-                                       "-485,-357,347"
-                                       "-345,-311,381"
-                                       "-661,-816,-575"
-                                       "-876,649,763"
-                                       "-618,-824,-621"
-                                       "553,345,-567"
-                                       "474,580,667"
-                                       "-447,-329,318"
-                                       "-584,868,-557"
-                                       "544,-627,-890"
-                                       "564,392,-477"
-                                       "455,729,728"
-                                       "-892,524,684"
-                                       "-689,845,-530"
-                                       "423,-701,434"
-                                       "7,-33,-71"
-                                       "630,319,-379"
-                                       "443,580,662"
-                                       "-789,900,-551"
-                                       "459,-707,401 ")))
-(defconst scanner-1 (day19/read-scan '("--- scanner 1 ---"
-                                       "686,422,578"
-                                       "605,423,415"
-                                       "515,917,-361"
-                                       "-336,658,858"
-                                       "95,138,22"
-                                       "-476,619,847"
-                                       "-340,-569,-846"
-                                       "567,-361,727"
-                                       "-460,603,-452"
-                                       "669,-402,600"
-                                       "729,430,532"
-                                       "-500,-761,534"
-                                       "-322,571,750"
-                                       "-466,-666,-811"
-                                       "-429,-592,574"
-                                       "-355,545,-477"
-                                       "703,-491,-529"
-                                       "-328,-685,520"
-                                       "413,935,-424"
-                                       "-391,539,-444"
-                                       "586,-435,557"
-                                       "-364,-763,-893"
-                                       "807,-499,-711"
-                                       "755,-354,-619"
-                                       "553,889,-390")))
-(defconst scanner-4 (day19/read-scan '("--- scanner 4 ---"
-                                       "727,592,562"
-                                       "-293,-554,779"
-                                       "441,611,-461"
-                                       "-714,465,-776"
-                                       "-743,427,-804"
-                                       "-660,-479,-426"
-                                       "832,-632,460"
-                                       "927,-485,-438"
-                                       "408,393,-506"
-                                       "466,436,-512"
-                                       "110,16,151"
-                                       "-258,-428,682"
-                                       "-393,719,612"
-                                       "-211,-452,876"
-                                       "808,-476,-593"
-                                       "-575,615,604"
-                                       "-485,667,467"
-                                       "-680,325,-822"
-                                       "-627,-443,-432"
-                                       "872,-547,-609"
-                                       "833,512,582"
-                                       "807,604,487"
-                                       "839,-516,451"
-                                       "891,-625,532"
-                                       "-652,-548,-490"
-                                       "30,-46,-14")))
+(defconst day19-test/example (day19/read-scans (advent/read-blocks-of-lines 19 :example)))
 
 (describe "Day 19"
   (describe "part 1"
     (describe "scan pairs detection"
       (it "can detect the pairing of 1 and 0"
-       (expect (day19/two-scanners-match? scanner-0 scanner-1)
+        (expect (day19/two-scanners-match? (elt day19-test/example 0)
+                                           (elt day19-test/example 1))
                :not :to-be nil)
-       (expect (day19/two-scanners-match? scanner-1 scanner-0)
+        (expect (day19/two-scanners-match? (elt day19-test/example 1)
+                                           (elt day19-test/example 0))
                :not :to-be nil))
       (it "can detect the pairing of 1 and 4"
-       (expect (day19/two-scanners-match? scanner-4 scanner-1)
+        (expect (day19/two-scanners-match? (elt day19-test/example 4)
+                                           (elt day19-test/example 1))
                :not :to-be nil)
-       (expect (day19/two-scanners-match? scanner-1 scanner-4)
-               :not :to-be nil))
+        (expect (day19/two-scanners-match? (elt day19-test/example 1)
+                                           (elt day19-test/example 4))
+                :not :to-be nil))
+      (it "can detect the pairing of 4 and 2"
+        (expect (day19/two-scanners-match? (elt day19-test/example 4)
+                                           (elt day19-test/example 2))
+               :not :to-be nil)
+        (expect (day19/two-scanners-match? (elt day19-test/example 2)
+                                           (elt day19-test/example 4))
+                :not :to-be nil))
+      (it "can detect the pairing of 2 and 3"
+        (expect (day19/two-scanners-match? (elt day19-test/example 2)
+                                           (elt day19-test/example 3))
+               :not :to-be nil)
+        (expect (day19/two-scanners-match? (elt day19-test/example 3)
+                                           (elt day19-test/example 2))
+               :not :to-be nil))      
       (it "can detect the lack of pairing between 0 and 4"
-       (expect (day19/two-scanners-match? scanner-0 scanner-4)
+        (expect (day19/two-scanners-match? (elt day19-test/example 0)
+                                           (elt day19-test/example 4))
                :to-be nil)
-       (expect (day19/two-scanners-match? scanner-4 scanner-0)
+        (expect (day19/two-scanners-match? (elt day19-test/example 4)
+                                           (elt day19-test/example 0))
+                :to-be nil))
+      (it "can detect the lack of pairing between 1 and 3"
+        (expect (day19/two-scanners-match? (elt day19-test/example 1)
+                                           (elt day19-test/example 3))
+               :to-be nil)
+        (expect (day19/two-scanners-match? (elt day19-test/example 3)
+                                           (elt day19-test/example 1))
+                :to-be nil))
+      (it "can detect the lack of pairing between 4 and 3"
+        (expect (day19/two-scanners-match? (elt day19-test/example 4)
+                                           (elt day19-test/example 3))
+               :to-be nil)
+        (expect (day19/two-scanners-match? (elt day19-test/example 3)
+                                           (elt day19-test/example 4))
                :to-be nil)))
-    (describe "list of beacons"
+    (xdescribe "list of beacons"
       (it "can build the correct list"
         (expect (sort (day19/build-list (advent/read-blocks-of-lines 19 :example))
                       (lambda (a b) (< (car a) (car b))))
@@ -123,7 +79,7 @@
                             (1693 -557 386) (1735 -437 1738) (1749 -1800 1813) (1772 -405 1572)
                             (1776 -675 371) (1779 -442 1789) (1780 -1548 337) (1786 -1538 337)
                             (1847 -1591 415) (1889 -1729 1762) (1994 -1805 1792)))))
-    (it "replicates the example"
+    (xit "replicates the example"
       (expect (day19/part-1 (advent/read-blocks-of-lines 19 :example))
               :to-be 79 ))
     (xit "solves the problem"
