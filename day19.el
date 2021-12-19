@@ -88,9 +88,10 @@ Can be used to move a point from the 'other' set to the 'reference' set"
         ;; for each point of the other set
         (while (and (not valid-translation) source-points)
           (let* ((src-point (pop source-points))
-                 (translation (day19/create-translation dst-point src-point)))
+                 (translation (day19/create-translation dst-point src-point))
+                 (validated-reference (day19/filter-ref ref (day19/create-translation src-point dst-point))))
             ;; if there is at least a 2 point match, add it to the 
-            (when (day19/two-beacons-match-for-translation? (day19/filter-ref ref (day19/create-translation src-point dst-point)) other translation)
+            (when (day19/two-beacons-match-for-translation? validated-reference other translation)
               (setq valid-translation translation))))))
     valid-translation))
 
