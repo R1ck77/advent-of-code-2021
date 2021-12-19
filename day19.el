@@ -48,8 +48,6 @@
          (< z 1000)
          point)))
 
-(defun day19/visible-by-other? (point reference))
-
 (defun day19/two-beacons-match-for-translation? (ref other translation)
   "Returns the translation if it results in at least 12 matches between ref and other or more"
   (if (>= (length ref) 12) ;; if I have reduce ref so much, forget about it!
