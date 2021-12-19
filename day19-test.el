@@ -85,23 +85,23 @@
   (describe "part 1"
     (describe "scan pairs detection"
       (it "can detect the pairing of 1 and 0"
-       (expect (day18/coupled? scanner-0 scanner-1)
-               :not :to-be-nil)
-       (expect (day18/coupled? scanner-1 scanner-0)
-               :not :to-be-nil))
+       (expect (day19/two-scanners-match? scanner-0 scanner-1)
+               :not :to-be nil)
+       (expect (day19/two-scanners-match? scanner-1 scanner-0)
+               :not :to-be nil))
       (it "can detect the pairing of 1 and 4"
-       (expect (day18/coupled? scanner-4 scanner-1)
-               :not :to-be-nil)
-       (expect (day18/coupled? scanner-1 scanner-4)
-               :not :to-be-nil))
+       (expect (day19/two-scanners-match? scanner-4 scanner-1)
+               :not :to-be nil)
+       (expect (day19/two-scanners-match? scanner-1 scanner-4)
+               :not :to-be nil))
       (it "can detect the lack of pairing between 0 and 4"
-       (expect (day18/coupled? scanner-0 scanner-4)
-               :to-be-nil)
-       (expect (day18/coupled? scanner-4 scanner-0)
-               :to-be-nil)))
+       (expect (day19/two-scanners-match? scanner-0 scanner-4)
+               :to-be nil)
+       (expect (day19/two-scanners-match? scanner-4 scanner-0)
+               :to-be nil)))
     (describe "list of beacons"
       (it "can build the correct list"
-        (expect (sort (day18/build-list (advent/read-blocks-of-lines 19 :example))
+        (expect (sort (day19/build-list (advent/read-blocks-of-lines 19 :example))
                       (lambda (a b) (< (car a) (car b))))
                 :to-equal '((-892 524 684) (-876 649 763) (-838 591 734) (-789 900 -551)
                             (-739 -1745 668) (-706 -3180 -659) (-697 -3072 -689) (-689 845 -530)

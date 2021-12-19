@@ -1,32 +1,39 @@
 (require 'dash)
 (require 'advent-utils)
 
-(defconst day19/transforms (list
-                            (lambda (x y z) (list x y z))
-                            (lambda (x y z) (list x z (- y)))
-                            (lambda (x y z) (list x (- z) y))
-                            (lambda (x y z) (list x (- y) (- z)))
-                            (lambda (x y z) (list (- x) y (- z)))
-                            (lambda (x y z) (list (- x) (- y) z))
-                            (lambda (x y z) (list (- x) (- z) (- y)))
-                            (lambda (x y z) (list (- x) z y))
-                            (lambda (x y z) (list z y (- x)))
-                            (lambda (x y z) (list z (- y) x))
-                            (lambda (x y z) (list z x y))
-                            (lambda (x y z) (list z (- x) (- y)))
-                            (lambda (x y z) (list (- z) y x))
-                            (lambda (x y z) (list (- z) (- y) (- x)))
-                            (lambda (x y z) (list (- z) (- x) y))
-                            (lambda (x y z) (list (- z) x (- y)))
-                            (lambda (x y z) (list y (- x) z))
-                            (lambda (x y z) (list y x (- z)))
-                            (lambda (x y z) (list y (- z) (- x)))
-                            (lambda (x y z) (list y z x))
-                            (lambda (x y z) (list (- y) (- x) (- z)))
-                            (lambda (x y z) (list (- y) x z))
-                            (lambda (x y z) (list (- y) z (- x)))
-                            (lambda (x y z) (list (- y) (- z) x)))
-  "List of all spatial transformations, identities included")
+(defconst day19/spatial-transforms (list (lambda (x y z) (list x y z))
+                                         (lambda (x y z) (list x z (- y)))
+                                         (lambda (x y z) (list x (- z) y))
+                                         (lambda (x y z) (list x (- y) (- z)))
+                                         (lambda (x y z) (list (- x) y (- z)))
+                                         (lambda (x y z) (list (- x) (- y) z))
+                                         (lambda (x y z) (list (- x) (- z) (- y)))
+                                         (lambda (x y z) (list (- x) z y))
+                                         (lambda (x y z) (list z y (- x)))
+                                         (lambda (x y z) (list z (- y) x))
+                                         (lambda (x y z) (list z x y))
+                                         (lambda (x y z) (list z (- x) (- y)))
+                                         (lambda (x y z) (list (- z) y x))
+                                         (lambda (x y z) (list (- z) (- y) (- x)))
+                                         (lambda (x y z) (list (- z) (- x) y))
+                                         (lambda (x y z) (list (- z) x (- y)))
+                                         (lambda (x y z) (list y (- x) z))
+                                         (lambda (x y z) (list y x (- z)))
+                                         (lambda (x y z) (list y (- z) (- x)))
+                                         (lambda (x y z) (list y z x))
+                                         (lambda (x y z) (list (- y) (- x) (- z)))
+                                         (lambda (x y z) (list (- y) x z))
+                                         (lambda (x y z) (list (- y) z (- x)))
+                                         (lambda (x y z) (list (- y) (- z) x)))
+  "List of all spatial transformations, identity included")
+
+(defun day19/count-matches (group1 group2)
+  (if (> (length group1) (length group2))
+      (day19/count-matches group2 group1)
+    (let ((set (advent/table)))
+      ;; let's hope that insertion costs more than extraction
+      (--each group2 (advent/put set it t))
+      (length (--filter (advent/get set it) group1)))))
 
 (defun day19/visible-beacon? (point)
 ;;; TODO/FIXME bland optimization possible
@@ -37,10 +44,19 @@
          (<= x 1000)
          (>= y -1000)
          (<= y 1000)
-         (>= z 1000)
-         (<= z 1000))))
+         (>= z -1000)
+         (<= z 1000)
+         point)))
 
-(defun day19/two-point-match-for-translation? (ref other translation))
+(defun day19/two-beacons-match-for-translation? (ref other translation)
+  "Returns the translation if it results in at least 12 matches between ref and other or more"
+  (let ((groups (-split-at 10 (-filter #'day19/visible-beacon? (--map (apply translation it) other)))))
+    (let ((primary-group (cadr groups))
+          (secondary-group (car groups)))
+      (let ((primary-matches (day19/count-matches ref primary-group)))
+        (unless (< primary-matches 2)
+          (let ((all-matches (+ primary-matches (day19/count-matches ref secondary-group))))
+            (and (>= all-matches 12) translation)))))))
 
 (defun day19/create-translation (dest src)
   "Creates a transform that turns src point into dst points
@@ -54,23 +70,40 @@ Can be used to move a point from the 'other' set to the 'reference' set"
             (+ y dy)
             (+ z dz)))))
 
-(defun day19/two--point--match? (ref other)
-  "Given the two groups of beacons in the same orientation, return the list of transforms with *at least* a two point match
+(defun day19/create-valid-translation (dest src)
+  "Creates a transform with 'create-translation' but returns nil if the point is not valid"
+  (lexical-let ((transform (day19/create-translation dest src)))
+    (lambda (x y z)
+      (let ((result (funcall transform x y z)))
+        (day19/visible-beacon? result)))))
 
-This is a preliminary check, if a transform works here, it's worth re-checking more thoroughly"
+(defun day19/oriented-beacons--match? (ref other)
+  "Given the two groups of beacons in the same orientation, return the transform if there is a match"
   (let ((destination-points ref)
-        (candidates)))
-  ;; for each point of the reference set
-  (while destination-points
-    (let ((dest-point (pop translations))
-          (source-points other))
-      ;; for each point of the other set
-      (while source-points
-        (let ((translation (day19/create-translation dest-point (pop source-point))))
-          ;; if there is at least a 2 point match, add it to the 
-          (when (day19/two-point-match-for-translation? ref other translation)
-            (push translation candidates))))))
-  candidates)
+        (valid-translation))
+    ;; for each point of the reference set
+    (while (and (not valid-translation) destination-points)
+      (let ((dst-point (pop destination-points))
+            (source-points other))
+        ;; for each point of the other set
+        (while (and (not valid-translation) source-points)
+          (let* ((src-point (pop source-points))
+                 (translation (day19/create-translation dst-point src-point)))
+            ;; if there is at least a 2 point match, add it to the 
+            (when (day19/two-beacons-match-for-translation? ref other translation)
+              (setq valid-translation translation))))))
+    valid-translation))
+
+(defun day19/two-scanners-match? (ref other)
+  "Returns a couple of transforms, the rotation and the translation, or nil"
+  (let ((remaining-transforms day19/spatial-transforms)
+        (matching-transforms))
+    (while (and (not matching-transforms) remaining-transforms)
+      (let* ((current-rotation (pop remaining-transforms))
+             (rotated-other (--map (apply current-rotation it) other)))
+        (when-let ((translation (day19/oriented-beacons--match? ref rotated-other)))
+          (setq matching-transforms (cons current-rotation translation)))))
+    matching-transforms))
 
 (defun day19/read-coordinate (line)
   (-map #'string-to-number

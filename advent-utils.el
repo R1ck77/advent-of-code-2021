@@ -49,6 +49,7 @@ It binds:
                   ,default
                   ,other))
 
+;;; TODO/FIXME mixing of hash and table in the names. Either advent/hash or change these
 (defun advent/map-hash (table function)
   "Like maphash, but accumulates the return like -map does"
   (let ((result))
