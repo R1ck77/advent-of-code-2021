@@ -126,11 +126,18 @@
     (let ((players-1 (day21/player-qstep p1-pos p1-score))
           (players-2 (day21/player-qstep p2-pos p2-score)))
       (let ((all-states))
-       (loop for p1 in players-1 do
-             (loop for p2 in players-2 do
-                   (push (cons (cons (car p1) (car p2))
-                               (vector (car (cdr p1)) (cdr (cdr p1)) (car (cdr p2)) (cdr (cdr p2))))
-                         all-states)))
+        (loop for p1 in players-1 do
+              (let ((p1-comb (car p1))
+                    (p1-pos (car (cdr p1)))
+                    (p1-score (cdr (cdr p1))))
+                (if (< p1-score day21/qlimit)
+                    (loop for p2 in players-2 do
+                          (push (cons (cons p1-comb (car p2))
+                                      (vector p1-pos p1-score (car (cdr p2)) (cdr (cdr p2))))
+                                all-states))
+                  (push (cons (cons p1-comb 1)
+                              (vector (car (cdr p1)) (cdr (cdr p1)) p2-pos p2-score))
+                            all-states))))
        all-states))))
 
 (defun day21/qvictory? (qstate)
@@ -150,21 +157,12 @@
    (vector (* f (aref v 0))
            (* f (aref v 1)))))
 
-(defun day21/multiplicity (m1-m2 v)
-  (let ((v1 (aref v 0))
-        (v2 (aref v 1))
-        (m1 (car m1-m2))
-        (f (* (car m1-m2) (cdr m1-m2))))
-    (assert (or (zerop v1) (zerop v2)))
-    (vector (* m1 v1)
-            (* f v2))))
-
 (defun day21/count-victories! (cache qstate m1-m2)
   "Returns a cons of victories for the current qstate. Updates the cache"
   (if-let ((cached (advent/get cache qstate)))
       (day21/mult-wins m1-m2 cached)
     (if-let ((dead-end (day21/qvictory? qstate)))
-        (day21/multiplicity m1-m2 dead-end)
+        (day21/mult-wins m1-m2 dead-end)
       (let* ((new-m-states (day21/qevolve qstate))
              (reduced (--reduce-from (let ((inner-m1-m2 (car it))
                                            (s1-s2 (cdr it)))
