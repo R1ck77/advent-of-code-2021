@@ -1,7 +1,7 @@
 (require 'day09.el)
 (require 'buttercup)
 
-(describe "Day 9"
+(describe "--- Day 9: Smoke Basin ---"
   (describe "part 1"
     (it "replicates the example"
       (expect (day09.el/part-1 (advent/read-problem-lines 9 :example))

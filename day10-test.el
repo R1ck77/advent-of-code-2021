@@ -1,7 +1,7 @@
 (require 'day10)
 (require 'buttercup)
 
-(describe "Day 10"
+(describe "--- Day 10: Syntax Scoring ---"
   (describe "part 1"
     (describe "single instruction categorization"
       (it "correctly categorizes [(()[<>])]({[<{<<[]>>( as not corrupted"

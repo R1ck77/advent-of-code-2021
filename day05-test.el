@@ -1,7 +1,7 @@
 (require 'day05)
 (require 'buttercup)
 
-(describe "Day 5"
+(describe "--- Day 5: Hydrothermal Venture ---"
   (describe "part 1"
     (it "replicates the example"
       (expect (day05/part-1 (advent/read-problem-lines 5 :example))

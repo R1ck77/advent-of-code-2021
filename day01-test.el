@@ -1,7 +1,7 @@
 (require 'day01)
 (require 'buttercup)
 
-(describe "Day 1"
+(describe "--- Day 1: Sonar Sweep ---"
   (describe "part 1"
     (it "replicates the example"
       (expect (day01/part-1 (advent/read-problem-numbers 1 :example))

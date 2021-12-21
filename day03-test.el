@@ -1,7 +1,7 @@
 (require 'day03)
 (require 'buttercup)
 
-(describe "Day 3"
+(describe "--- Day 3: Binary Diagnostic ---"
   (describe "part 1"
     (it "replicates the example"
       (expect (day03/part-1 (advent/read-problem-lines 3 :example))

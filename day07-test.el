@@ -1,7 +1,7 @@
 (require 'day07)
 (require 'buttercup)
 
-(describe "Day 7"
+(describe "--- Day 7: The Treachery of Whales ---"
   (describe "part 1"
     (it "replicates the example"
       (expect (day07/part-1 (advent/read-problem-numbers-line 7 :example))
