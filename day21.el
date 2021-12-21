@@ -152,10 +152,12 @@
 
 (defun day21/multiplicity (m1-m2 v)
   (let ((v1 (aref v 0))
-        (v2 (aref v 1)))
+        (v2 (aref v 1))
+        (m1 (car m1-m2))
+        (f (* (car m1-m2) (cdr m1-m2))))
     (assert (or (zerop v1) (zerop v2)))
-    (vector (* (car m1-m2) v1)
-            (* (car m1-m2) (cdr m1-m2) v2))))
+    (vector (* m1 v1)
+            (* f v2))))
 
 (defun day21/count-victories! (cache qstate m1-m2)
   "Returns a cons of victories for the current qstate. Updates the cache"
