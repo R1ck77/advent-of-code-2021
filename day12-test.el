@@ -1,7 +1,7 @@
 (require 'day12)
 (require 'buttercup)
 
-(describe "Day 12"
+(describe "--- Day 12: Passage Pathing ---"
   (describe "part 1"
     (describe "small examples"
       (it "computes the number of paths for the tiny example"

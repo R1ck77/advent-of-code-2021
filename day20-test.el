@@ -1,7 +1,7 @@
 (require 'day20)
 (require 'buttercup)
 
-(describe "Day 20"
+(describe "--- Day 20: Trench Map ---"
   (describe "part 1"
     (it "replicates the example"
       (expect (day20/part-1 (advent/read-blocks-of-lines 20 :example))

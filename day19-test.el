@@ -3,7 +3,7 @@
 
 (defconst day19-test/example (day19/read-scans (advent/read-blocks-of-lines 19 :example)))
 
-(describe "Day 19"
+(describe "--- Day 19: Beacon Scanner ---"
   (describe "part 1"
     (describe "scan pairs detection"
       (it "can detect the pairing of 1 and 0"

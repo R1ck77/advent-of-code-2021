@@ -1,7 +1,8 @@
 (require 'day18)
 (require 'buttercup)
 
-(describe "Day 18"
+(describe "--- Day 18: Snailfish ---
+"
   (describe "read"
     (it "can read expressions correctly"
       (expect (day18/read-number "[1,2]") :to-equal '(1 2))

@@ -1,7 +1,7 @@
 (require 'day11)
 (require 'buttercup)
 
-(describe "Day 11"
+(describe "--- Day 11: Dumbo Octopus ---"
   (describe "part 1"
     (describe "small example evolution"
       (it "can replicate step 1"

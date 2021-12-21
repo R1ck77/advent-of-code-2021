@@ -1,7 +1,7 @@
 (require 'day21)
 (require 'buttercup)
 
-(describe "Day 21"
+(describe "--- Day 21: Dirac Dice ---"
   (describe "part 1"
     (it "replicates the example"
       (expect (day21/part-1 (advent/read-problem-lines 21 :example))

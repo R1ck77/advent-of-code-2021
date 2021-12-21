@@ -1,7 +1,7 @@
 (require 'day13)
 (require 'buttercup)
 
-(describe "Day 13"
+(describe "--- Day 13: Transparent Origami ---"
   (describe "part 1"
     (describe "vertical fold works"
       (it "replicates the first fold"

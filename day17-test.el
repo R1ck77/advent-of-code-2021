@@ -1,7 +1,7 @@
 (require 'day17)
 (require 'buttercup)
 
-(describe "Day 17"
+(describe "--- Day 17: Trick Shot ---"
   (describe "part 1"
     (it "replicates the example"
       (expect (day17/part-1 (car (advent/read-problem-lines 17 :example)))

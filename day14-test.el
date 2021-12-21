@@ -1,7 +1,7 @@
 (require 'day14)
 (require 'buttercup)
 
-(describe "Day 14"
+(describe "--- Day 14: Extended Polymerization ---"
   (describe "part 1"
     (it "replicates the example"
       (expect (day14/part-1 (advent/read-blocks-of-lines 14 :example))

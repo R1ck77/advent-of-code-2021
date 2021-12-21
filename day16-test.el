@@ -1,7 +1,7 @@
 (require 'day16)
 (require 'buttercup)
 
-(describe "Day 16"
+(describe "--- Day 16: Packet Decoder ---"
   (describe "part 1"
     (describe "examples"
      (it "replicates the example 1"
