@@ -128,15 +128,12 @@
       (let ((all-states))
        (loop for p1 in players-1 do
              (loop for p2 in players-2 do
-                   (push (cons (* (car p1) (car p2))
+                   (push (cons (cons (car p1) (car p2))
                                (vector (car (cdr p1)) (cdr (cdr p1)) (car (cdr p2)) (cdr (cdr p2))))
                          all-states)))
        all-states))))
 
 (defun day21/qvictory? (qstate)
-  ;; TODO/FIXME Should I find a way to enforce this?
-  (comment (assert (or (< (aref qstate 1) day21/qlimit)
-               (< (aref qstate 3) day21/qlimit))))
   (if (>= (aref qstate 1) day21/qlimit)
       (vector 1 0)
     (when (>= (aref qstate 3) day21/qlimit)
@@ -148,24 +145,32 @@
           (+ (aref va 1)
              (aref vb 1))))
 
-(defun day21/mult-wins (v m)
-  (vector (* m (aref v 0))
-          (* m (aref v 1))))
+(defun day21/mult-wins (m1-m2 v)
+  (let ((f (* (car m1-m2) (cdr m1-m2))))
+   (vector (* f (aref v 0))
+           (* f (aref v 1)))))
 
-(defun day21/count-victories! (cache qstate)
+(defun day21/multiplicity (m1-m2 v)
+  (let ((v1 (aref v 0))
+        (v2 (aref v 1)))
+    (assert (or (zerop v1) (zerop v2)))
+    (vector (* (car m1-m2) v1)
+            (* (car m1-m2) (cdr m1-m2) v2))))
+
+(defun day21/count-victories! (cache qstate m1-m2)
   "Returns a cons of victories for the current qstate. Updates the cache"
-  (or (advent/get cache qstate)
-      (when-let ((computed (day21/qvictory? qstate)))
-        (advent/put cache qstate computed)
-        computed)
-      (let* ((new-m-states (day21/qevolve qstate)) ;; new states with multipliers
-             (computed (--reduce-from (day21/sum-wins acc
-                                                      (day21/mult-wins (day21/count-victories! cache (cdr it))
-                                                                       (car it)))
-                                      (vector 0 0)
-                                      new-m-states)))
-        (advent/put cache qstate computed)
-        computed)))
+  (if-let ((cached (advent/get cache qstate)))
+      (day21/mult-wins m1-m2 cached)
+    (if-let ((dead-end (day21/qvictory? qstate)))
+        (day21/multiplicity m1-m2 dead-end)
+      (let* ((new-m-states (day21/qevolve qstate))
+             (reduced (--reduce-from (let ((m1-m2 (car it))
+                                           (s1-s2 (cdr it)))
+                                       (day21/sum-wins acc (day21/count-victories! cache s1-s2 m1-m2)))
+                                     (vector 0 0)
+                                     new-m-states)))
+        (advent/put cache qstate reduced)
+        (day21/mult-wins m1-m2 reduced)))))
 
 
 (defun day21/create-qstate (players)
@@ -174,7 +179,8 @@
 
 (defun day21/part-2 (lines)
   (let ((result (day21/count-victories! (advent/table)
-                                        (day21/create-qstate (day21/read-input lines)))))
+                                        (day21/create-qstate (day21/read-input lines))
+                                        (cons 1 1))))
     (max (aref result 0)
          (aref result 1))))
 
