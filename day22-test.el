@@ -20,4 +20,4 @@
               :to-be 2758514936282235))
     (it "solves the problem"
       (expect (day22/part-2 (advent/read-problem-lines 22 :problem))
-              :to-be 42))))
+              :to-be 1201259791805392))))

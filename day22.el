@@ -1,6 +1,8 @@
 (require 'dash)
 (require 'advent-utils)
 
+(defconst day22/partitioning 5)
+
 (defun day22/read-interval (token)
   (let ((as-list (-map #'string-to-number
                        (split-string (cadr (split-string token "=" t)) "[.]+" t))))
@@ -21,7 +23,6 @@
 (defun day22/read-steps (lines)
   (-map #'day22/read-step lines))
 
-;; TODO/FIXME not sure it's correct. What if a cube is partially outside?
 (defun day22/bound-in-50-region? (min-max)
   (and (>= (car min-max) -50)
        (<= (cdr min-max) 50)))
@@ -85,6 +86,14 @@
               (cons (car step) (cdr step))
               (cons (1+ (cdr step)) (cdr base))))))
    (t (error "Unsupported case"))))
+
+(defun day22/cube-size (coords)
+  (* (let ((x-coords (elt coords 0)))
+       (1+ (- (cdr x-coords) (car x-coords))))
+     (let ((y-coords (elt coords 1)))
+       (1+ (- (cdr y-coords) (car y-coords))))
+     (let ((z-coords (elt coords 2)))
+       (1+ (- (cdr z-coords) (car z-coords))))))
 
 (defun day22/count-on (cube)
   (if (zerop (cadr cube))
@@ -179,18 +188,19 @@
 
 (defun day22/evolve-reactor (cubes rules)
   (while rules
-    (print (length rules))
     (let* ((rule (pop rules))
            (new-cubes (day22/apply-rule-to-all cubes rule)))
       (setq cubes new-cubes)))
   cubes)
 
-(defun day22/part-1 (lines)
-  (let ((rules (day22/restrict-steps (day22/read-steps lines)))
-        (region '((-50 . 50) (-50 . 50) (-50 . 50))))
+(defun day22/count-evolved-in-50-region (rules)
+  (let ((region '((-50 . 50) (-50 . 50) (-50 . 50))))
     (day22/count-all-cubes
-           (day22/evolve-reactor (list (list region 0))
-                                 rules))))
+     (day22/evolve-reactor (list (list region 0))
+                           rules))))
+
+(defun day22/part-1 (lines)
+  (day22/count-evolved-in-50-region  (day22/restrict-steps (day22/read-steps lines))))
 
 (defun day22/union--c (pair-1 pair-2)
   (cons (min (car pair-1) (car pair-2))
@@ -208,16 +218,43 @@
 (defun day22/get-region-extremes (rules)
   (-reduce #'day22/union (-map #'car rules)))
 
+(defun day22/up-half (coords)
+  (let ((half (/ (+ (car coords) (cdr coords)) 2)))
+   (cons (1+ half) (cdr coords))))
+
+(defun day22/lo-half (coords)
+  (let ((half (/ (+ (car coords) (cdr coords)) 2)))
+    (cons (car coords) half)))
+
+(defun day22/half-cube (cube-coords)
+  (let ((x-coords (elt cube-coords 0))
+        (y-coords (elt cube-coords 1))
+        (z-coords (elt cube-coords 2)))
+    (list (list (day22/lo-half x-coords) (day22/lo-half y-coords) (day22/up-half z-coords))
+          (list (day22/lo-half x-coords) (day22/lo-half y-coords) (day22/lo-half z-coords))
+          (list (day22/lo-half x-coords) (day22/up-half y-coords) (day22/up-half z-coords))
+          (list (day22/lo-half x-coords) (day22/up-half y-coords) (day22/lo-half z-coords))
+          (list (day22/up-half x-coords) (day22/lo-half y-coords) (day22/up-half z-coords))
+          (list (day22/up-half x-coords) (day22/lo-half y-coords) (day22/lo-half z-coords))
+          (list (day22/up-half x-coords) (day22/up-half y-coords) (day22/up-half z-coords))
+          (list (day22/up-half x-coords) (day22/up-half y-coords) (day22/lo-half z-coords)))))
+
+(defun day22/partition-cube (cubes-coords divisions)
+  (if (zerop divisions)
+      cubes-coords
+    (day22/partition-cube (-reduce #'append  (-map #'day22/half-cube cubes-coords)) (1- divisions))))
+
+(defun day22/count-result-for-region (region rules)
+  (day22/count-all-cubes
+   (day22/evolve-reactor (list (list region 0)) rules)))
+
+(defun day22/count-evolved (rules)
+  (let ((regions (day22/partition-cube (list (day22/get-region-extremes rules)) day22/partitioning)))
+    (apply #'+ (--map (day22/count-result-for-region it rules) regions))))
+
 (defun day22/part-2 (lines)
-  (let* ((rules (day22/read-steps lines))
-         (region (day22/get-region-extremes rules)))
-    (day22/count-all-cubes
-     (day22/evolve-reactor (list (list region 0))
-                           rules))))
+  (day22/count-evolved (day22/read-steps lines)))
 
 (provide 'day22)
-
-(setq example (day22/read-steps (advent/read-problem-lines 22 :example)))
-(setq problem (day22/read-steps (advent/read-problem-lines 22 :problem)))
 
 
