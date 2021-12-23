@@ -2,6 +2,76 @@
 (require 's)
 (require 'advent-utils)
 
+;;; Room layout:
+;;; h0 h1 . h2 . h3 . h4 . h5 h6  
+;;;      a0   b0   c0   d0
+;;;      a1   b1   c1   d1
+;;;      (possibly a1 and then a2)
+
+(defconst day23/s-potential-paths
+  '(
+    :a0 ((:h1) (:h1 :h0) (:h2) (:h2 :h3) (:h2 :h3 :h4) (:h2 :h3 :h4 :h5) (:h2 :h3 :h4 :h5 :h6)
+         (:h2 :b0) (:h2 :b0 :b1)
+         (:h2 :h3 :c0) (:h2 :h3 :c0 :c1)
+         (:h2 :h3 :h4 :d0) (:h2 :h3 :h4 :d0 :d1))
+    :a1 ((:a0 :h1) (:a0 :h1 :h0) (:a0 :h2) (:a0 :h2 :h3) (:a0 :h2 :h3 :h4) (:a0 :h2 :h3 :h4 :h5) (:a0 :h2 :h3 :h4 :h5 :h6)
+         (:a0 :h2 :b0) (:a0 :h2 :b0 :b1)
+         (:a0 :h2 :h3 :c0) (:a0 :h2 :h3 :c0 :c1)
+         (:a0 :h2 :h3 :h4 :d0) (:a0 :h2 :h3 :h4 :d0 :d1))
+    :b0 ((:h2) (:h2 :h1) (:h2 :h1 :h0) (:h3) (:h3 :h4) (:h3 :h4 :h5) (:h3 :h4 :h5 :h6)
+         (:h2 :a0) (:h2 :a0 :a1)
+         (:h3 :c0) (:h3 :c0 :c1)
+         (:h3 :h4 :d0) (:h3 :h4 :d1))
+    :b1 ((:b0 :h2) (:b0 :h2 :h1) (:b0 :h2 :h1 :h0) (:b0 :h3) (:b0 :h3 :h4) (:b0 :h3 :h4 :h5) (:b0 :h3 :h4 :h5 :h6)
+         (:b0 :h2 :a0) (:b0 :h2 :a0 :a1)
+         (:b0 :h3 :c0) (:b0 :h3 :c0 :c1)
+         (:b0 :h3 :h4 :d0) (:b0 :h3 :h4 :d0 :d1))
+    :c0 ((:h3) (:h3 :h2) (:h3 :h2 :h1) (:h3 :h2 :h1 :h0) (:h4) (:h4 :h5) (:h4 :h5 :h6)
+         (:h3 :h2 :a0) (:h3 :h2 :a0 :a1)
+         (:h3 :b0) (:h3 :b0 :b1)
+         (:h4 :d0) (:h4 :d0 :d1))
+    :c1 ((:c0 :h3) (:c0 :h3 :h2) (:c0 :h3 :h2 :h1) (:c0 :h3 :h2 :h1 :h0) (:c0 :h4) (:c0 :h4 :h5) (:c0 :h4 :h5 :h6)
+         (:c0 :h3 :h2 :a0) (:c0 :h3 :h2 :a0 :a1)
+         (:c0 :h3 :b0) (:c0 :h3 :b0 :b1)
+         (:c0 :h4 :d0) (:c0 :h4 :d0 :d1))
+    :d0 ((:h5) (:h5 :h6) (:h4) (:h4 :h3) (:h4 :h3 :h2) (:h4 :h3 :h2 :h1) (:h4 :h3 :h2 :h1 :h0)
+         (:h4 :c0) (:h4 :c0 :c1)
+         (:h4 :h3 :b0) (:h4 :h3 :b0 :b1)
+         (:h4 :h3 :h2 :a0) (:h4 :h3 :h2 :a0 :a1))
+    :d1 ((:d0 :h5) (:d0 :h5 :h6) (:d0 :h4) (:d0 :h4 :h3) (:d0 :h4 :h3 :h2) (:d0 :h4 :h3 :h2 :h1) (:d0 :h4 :h3 :h2 :h1 :h0)
+         (:d0 :h4 :c0) (:d0 :h4 :c0 :c1)
+         (:d0 :h4 :h3 :b0) (:d0 :h4 :h3 :b0 :b1)
+         (:d0 :h4 :h3 :h2 :a0) (:d0 :h4 :h3 :h2 :a0 :a1))
+    :h0 ((:h1 :a0) (:h1 :a0 :a1)
+         (:h1 :h2 :b0) (:h1 :h2 :b0 :b1)
+         (:h1 :h2 :h3 :c0) (:h1 :h2 :h3 :c0 :c1)
+         (:h1 :h2 :h3 :h4 :d0) (:h1 :h2 :h3 :h4 :d0 :d1))
+    :h1 ((:a0) (:a0 :a1)
+         (:h2 :b0) (:h2 :b0 :b1)
+         (:h2 :h3 :c0) (:h2 :h3 :c0 :c1)
+         (:h2 :h3 :h4 :d0) (:h2 :h3 :h4 :d0 :d1))
+    :h2 ((:a0) (:a0 :a1)
+         (:b0) (:b0 :b1)
+         (:h3 :c0) (:h3 :c0 :c1)
+         (:h3 :h4 :d0) (:h3 :h4 :d0 :d1))
+    :h3 ((:b0) (:b0 :b1)
+         (:h2 :a0) (:h2 :a0 :a1)
+         (:c0) (:c0 :c1)
+         (:h4 :d0) (:h4 :d0 :d1))
+    :h4 ((:d0) (:d0 :d1)
+         (:c0) (:c0 :c1)
+         (:h3 :b0) (:h3 :b0 :b1)
+         (:h3 :h2 :a0) (:h3 :h2 :a0 :a1))
+    :h5 ((:d0) (:d0 :d1)
+         (:h4 :c0) (:h4 :c0 :c1)
+         (:h4 :h3 :b0) (:h4 :h3 :b0 :b1)
+         (:h4 :h3 :h2 :a0) (:h4 :h3 :h2 :a0 :a1))
+    :h6 ((:h5 :d0) (:h5 :d0 :d1)
+         (:h5 :h4 :c0) (:h5 :h4 :c0 :c1)
+         (:h5 :h4 :h3 :b0) (:h5 :h4 :h3 :b0 :b1)
+         (:h5 :h4 :h3 :h2 :a0) (:h5 :h4 :h3 :h2 :a0 :a1))))
+
+
 (defvar day23/halls (list :h0 :h1 :h2 :h3 :h4 :h5 :h6))
 
 (defvar day23/s-rooms (list :a0 :a1 :b0 :b1 :c0 :c1 :d0 :d1))
@@ -146,11 +216,50 @@
 (defun day23/s-can-move-from-room? (state location)
   )
 
+(defun day23/s-get-layout-for-room (letter)
+  (case letter
+    (:a '(:a0 :a1))
+    (:b '(:b0 :b1))
+    (:c '(:c0 :c1))
+    (:d '(:d0 :d1))
+    (t (error "Invalid letter"))))
+
+(defun day23/s-room-occupants (state letter)
+  "Returns a list of cons corresponding to the occupied rooms, from top to down"
+  (-filter #'cdr
+          (--map (cons it (plist-get state it))
+                 (day23/s-get-layout-for-room letter))))
+
+(defun day23/s-get-room-state (state letter)
+  "Returns the state of the room corresopnding to the letter:
+
+:full                 if the room is occupied by the owners
+:space                if the room has space for a owner
+(<place> , <letter>)  the first guest that should leave"
+  (let ((guests (day23/s-room-occupants state letter)))
+    (cond
+     ((not guests) :space) ;completely empty
+     ((eq (-uniq (-map #'cdr guests)) (list letter)) ;all guests are of the correct letter
+      (if (= (length guests) 2)
+          :full ;and they fill the room
+        :space))
+     (t (car guests) (car guests)))))
+
+(defun day23/can-move-there? (state src dst)
+  (plist-get day23/s-potential-paths src ))
+
+(defun day23/something (state)
+  (let ((a-state (day23/s-get-room-state state :a))
+        (b-state (day23/s-get-room-state state :b))
+        (c-state (day23/s-get-room-state state :c))
+        (d-state (day23/s-get-room-state state :d)))))
+
 (defun day23/s-can-move? (state location)
   "returs the location if it's associated with an agent which has available moves"
   (if (memq location day23/halls)
       (day23/s-can-move-from-hall? state location)
     (day23/s-can-move-from-room? state location)))
+
 
 (defun day23/s-next (state)
   "Return all possible outcomes of the current state, or nil if none exists"
