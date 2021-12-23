@@ -71,6 +71,58 @@
          (:h5 :h4 :h3 :b0) (:h5 :h4 :h3 :b0 :b1)
          (:h5 :h4 :h3 :h2 :a0) (:h5 :h4 :h3 :h2 :a0 :a1))))
 
+;;; Preprocessing
+(defun day23/convert-paths (x)
+  (let ((table (advent/table)))
+    (-each (-partition 2 x)
+      (lambda (block)
+        (let ((start (car block))
+              (paths (cadr block)))
+          (--each paths
+            (progn
+              (print (format "%s -> %s"(cons start (car (reverse it))) it))
+              (advent/put table
+                         (cons start (car (reverse it)))
+                         it))))))
+    table))
+
+(defconst day23/s-from-to-paths (day23/convert-paths day23/s-potential-paths))
+
+(defconst day23/raw--double-cost-moves
+  '(
+    (:h1 . :a0) (:a0 . :h1)
+    (:h2 . :a0) (:a0 . :h2)
+    (:h1 . :h2) (:h2 . :h1)
+    (:h2 . :b0) (:b0 . :h2)
+    (:h3 . :b0) (:b0 . :h3)
+    (:h3 . :h2) (:h2 . :h3)
+    (:h3 . :c0) (:c0 . :h3)
+    (:h4 . :c0) (:c0 . :h4)
+    (:h3 . :h4) (:h4 . :h3)
+    (:h4 . :d0) (:d0 . :h4)
+    (:h5 . :d0) (:d0 . :h5)
+    (:h4 . :h5) (:h5 . :h4)))
+
+;;; Preprocessing
+(defun day23/add-to-set (list)
+  (let ((table (advent/table)))
+    (--each list (advent/put table it 2))
+    table))
+
+(defconst day23/double--cost-moves (day23/add-to-set day23/raw--double-cost-moves))
+
+(defun day23/compute--moves-cost (from-to)
+  (let ((all-costs (advent/table)))
+    (maphash (lambda (src-dst other-cells) 
+               (let* ((all-steps (--map (cons (car it) (cadr it))  (-partition-in-steps 2 1 (cons (car src-dst) other-cells))))
+                      (move-cost (apply #'+ (--map (advent/get day23/double--cost-moves it 1) all-steps))))
+                 (print (format "%s -> %s (%s)" src-dst move-cost all-steps))
+                 (advent/put all-costs src-dst move-cost)))
+             from-to)
+    all-costs))
+
+;; This is constant, so caching is sort of mandatory
+(defconst day23/s-move-costs (day23/compute--moves-cost day23/s-from-to-paths))
 
 (defvar day23/halls (list :h0 :h1 :h2 :h3 :h4 :h5 :h6))
 
@@ -246,7 +298,9 @@
      (t (car guests) (car guests)))))
 
 (defun day23/can-move-there? (state src dst)
-  (plist-get day23/s-potential-paths src ))
+  "Returns true if the path from src to dst is not blocked"
+  (let ((path (advent/get day23/s-from-to-paths (cons src dst))))
+    (not (-non-nil (--map (plist-get state it) path)))))
 
 (defun day23/something (state)
   (let ((a-state (day23/s-get-room-state state :a))
