@@ -88,22 +88,23 @@ It binds:
      (setq n (1- n)))
    value))
 
-(defun advent/compute-input-name (day type)
-  (format (cond
-           ((eq type :example)
-            "data/day%d-example.txt")
-           ((eq type :problem)
-            "data/day%d-problem.txt")
-           (t (error "Unexpected problem type")))
-          day))
+(defun advent/compute-input-name (day type &optional part)
+  (let ((part-name (or (and part (format "-part%d" part)) "")))
+    (format (cond
+             ((eq type :example)
+              "data/day%d-example%s.txt")
+             ((eq type :problem)
+              "data/day%d-problem%s.txt")
+             (t (error "Unexpected problem type")))
+            day part-name)))
 
-(defun advent/read-problem-text (day type)
+(defun advent/read-problem-text (day type &optional part)
   (with-temp-buffer
-    (insert-file-contents (advent/compute-input-name day type))
+    (insert-file-contents (advent/compute-input-name day type part))
     (buffer-substring-no-properties (point-min) (point-max))))
 
-(defun advent/read-problem-lines (day type)
-  (split-string (advent/read-problem-text day type) "\n" t))
+(defun advent/read-problem-lines (day type &optional part)
+  (split-string (advent/read-problem-text day type part) "\n" t))
 
 (defun advent/read--grid-line (line conversion-f)
   (apply #'vector (-map conversion-f (split-string line "" t))))
