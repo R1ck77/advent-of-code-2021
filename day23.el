@@ -181,7 +181,7 @@
           (day23/get--string state :a3) (day23/get--string state :b3) (day23/get--string state :c3) (day23/get--string state :d3)))
 
 (defun day23/to-string (state)
-  (if (= (length state) 30)
+  (if (= (length state) 32)
       (day23/s-to-string state)
     (day23/l-to-string state)))
 
@@ -262,11 +262,17 @@
        (eq (day23/get-d1 state) :d)
        (day23/get-score state)))
 
-(defun day23/s-can-move-from-hall? (state location)
-  )
+(defun day23/can-move-there? (state src dst)
+  "Returns true if the path from src to dst is not blocked"
+  (let ((path (advent/get day23/s-from-to-paths (cons src dst))))
+    (not (-non-nil (--map (plist-get state it) path)))))
 
-(defun day23/s-can-move-from-room? (state location)
-  )
+;; TODO/FIXME unused?
+(defun day23/s-can-move? (state location)
+  "returs the location if it's associated with an agent which has available moves"
+  (if (memq location day23/halls)
+      (day23/s-can-move-from-hall? state location)
+    (day23/s-can-move-from-room? state location)))
 
 (defun day23/s-get-layout-for-room (letter)
   (case letter
@@ -282,6 +288,15 @@
           (--map (cons it (plist-get state it))
                  (day23/s-get-layout-for-room letter))))
 
+(defun day23/s-first-empty-for-room (state room)
+  (--first (not (plist-get state it))
+   (case room
+     (:a '(:a1 :a0))
+     (:b '(:b1 :b0))
+     (:c '(:c1 :c0))
+     (:d '(:d1 :d0))
+     (t (error "Unexpected room"))))) 
+
 (defun day23/s-get-room-state (state letter)
   "Returns the state of the room corresopnding to the letter:
 
@@ -291,33 +306,106 @@
   (let ((guests (day23/s-room-occupants state letter)))
     (cond
      ((not guests) :space) ;completely empty
-     ((eq (-uniq (-map #'cdr guests)) (list letter)) ;all guests are of the correct letter
+     ((equal (-uniq (-map #'cdr guests)) (list letter)) ;all guests are of the correct letter
       (if (= (length guests) 2)
           :full ;and they fill the room
         :space))
      (t (car guests) (car guests)))))
 
-(defun day23/can-move-there? (state src dst)
-  "Returns true if the path from src to dst is not blocked"
-  (let ((path (advent/get day23/s-from-to-paths (cons src dst))))
-    (not (-non-nil (--map (plist-get state it) path)))))
+(defun day23/get-rooms-state (state)
+  (list :a (day23/s-get-room-state state :a)
+        :b (day23/s-get-room-state state :b)
+        :c (day23/s-get-room-state state :c)
+        :d (day23/s-get-room-state state :d)))
 
-(defun day23/something (state)
-  (let ((a-state (day23/s-get-room-state state :a))
-        (b-state (day23/s-get-room-state state :b))
-        (c-state (day23/s-get-room-state state :c))
-        (d-state (day23/s-get-room-state state :d)))))
+(defun day23/get-room-moves (state room-states room)
+  "Return a list of all possible moves"
+  (let ((this-state (plist-get room-states room)))
+    (unless (or (eq this-state :space) ; cannot move stuff *from* here
+                (eq this-state :full)) ; no space
+      (let ((from (car this-state))
+            (letter (cdr this-state)))
+        ;; make sure the moves are valid
+        (--filter (day23/can-move-there? state (car it) (cdr it))
+                  (append
+                   ;; room to to room move
+                   (when (eq :space (plist-get room-states letter)) ;only if there is space
+                     (let ((bottom-space (day23/s-first-empty-for-room state letter)))
+                       (assert bottom-space)
+                       (list (cons from bottom-space))))
+                   ;; room to corridor moves
+                   (--map (cons from it) day23/halls)))))))
 
-(defun day23/s-can-move? (state location)
-  "returs the location if it's associated with an agent which has available moves"
-  (if (memq location day23/halls)
-      (day23/s-can-move-from-hall? state location)
-    (day23/s-can-move-from-room? state location)))
+(defun day23/get-hall-agents (state)
+  (-filter #'cdr (--map (cons it (plist-get state it)) day23/halls)))
 
+(defun day23/get-hall-moves (state room-states)
+  ;; List of agents that *could* go in a room, theoretically
+  (let ((pos-agents-with-destination (--filter (eq (plist-get room-states (cdr it)) :space)
+                                           (day23/get-hall-agents state))))
+    (--filter (day23/can-move-there? state (car it) (cdr it))
+              (--map (let* ((src (car it))
+                            (agent (cdr it))
+                            (destination (day23/s-first-empty-for-room state agent)))
+                       (assert destination)
+                       (cons src destination))
+                     pos-agents-with-destination))))
+
+(defun day23/s-compute-cost (move letter)
+  (* (advent/get day23/s-move-costs move)
+     (case letter
+       (:a 1)
+       (:b 10)
+       (:c 100)
+       (:d 1000)
+       (t (error "Unexpected letter!")))))
 
 (defun day23/s-next (state)
-  "Return all possible outcomes of the current state, or nil if none exists"
-  (--filter (day23/s-can-move? state day23/s-locations) state))
+  "Return all possible moves of the current state, or nil if none exists
+
+The move is in the form ((src . destination) letter cost)"
+  (let ((room-states (day23/get-rooms-state state)))
+    (let ((room-moves (apply #'append
+                             (--map (day23/get-room-moves state room-states it)
+                                    '(:a :b :c :d))))
+          (hall-moves (day23/get-hall-moves state room-states)))
+      (--map (let ((letter (plist-get state (car it))))
+               (list it letter (day23/s-compute-cost it letter)))
+             (append room-moves hall-moves)))))
+
+(defun day23/update (state move)
+  (let ((move (elt move 0))
+        (letter (elt move 1))
+        (cost (elt move 2))
+        (state (copy-sequence state))
+        (old-score (plist-get state :score)))
+    (plist-put (plist-put (plist-put state
+                           (car move)
+                           nil)
+                (cdr move)
+                letter)
+               :score
+               (+ old-score cost))))
+
+(defun day23/evolve (state)
+  "Returns the minimum score for a win"
+  (print (format "%s\nState:\n%s\n(score: %d)\n" state (day23/to-string state) (plist-get state :score)))
+  (read-string "Contniue?")
+  (if (day23/s-is-win? state)
+      (progn
+        (print (format "New win! %d" (plist-get state :score)))
+        (redisplay)
+       (plist-get state :score))
+    (let ((next-moves (day23/s-next state)))
+      (if next-moves ; otherwise is 'nil', that is, a dead end
+        (if-let ((results (-non-nil
+                           (--map (day23/evolve it)
+                                  (--map (day23/update state it) next-moves)))))
+            (apply #'min results))
+        (progn
+          (print "DEAD END!")
+          (redisplay)
+          nil)))))
 
 
 (defun day23/part-1 (lines)
@@ -334,3 +422,6 @@
 (setq ps (day23/s-read-problem (advent/read-problem-lines 23 :problem 1)))
 (setq el (day23/l-read-problem (advent/read-problem-lines 23 :example 2)))
 (setq pl (day23/l-read-problem (advent/read-problem-lines 23 :problem 2)))
+
+(setq max-lisp-eval-depth 100000)
+(setq max-specpdl-size 100000)
