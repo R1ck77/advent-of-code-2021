@@ -1,17 +1,22 @@
 (require 'dash)
+(require 's)
 (require 'advent-utils)
 
-(defun day24/read-operand (token)
-  ())
+(defun day24/tokenize (string)
+  (intern (format ":%s" string)))
 
-(defun day24/read-instruction (token)
-  ())
+(defun day24/read-operand (string)
+  (if (s-numeric? string)
+      (string-to-number string)
+    (day24/tokenize string)))
+
+(defun day24/read-instruction (string)
+  (day24/tokenize string))
 
 (defun day24/read-opcode (line)
-  (let ((tokens (split-string line " " t)))
-    (list (day24/read-instruction (elt tokens 0))
-          (day21/read-operand (elt tokens 1))
-          (day21/read-operand (elt tokens 2)))))
+  (let ((strings (split-string line " " t)))
+    (cons (day24/read-instruction (pop strings))
+          (-map #'day24/read-operand strings))))
 
 (defun day24/read-opcodes (lines)
   (-map #'day24/read-opcode lines))
@@ -23,3 +28,5 @@
   (error "Not yet implemented"))
 
 (provide 'day24)
+
+(setq example (day24/read-opcodes (advent/read-problem-lines 24 :problem)))
