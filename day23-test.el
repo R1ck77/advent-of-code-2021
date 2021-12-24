@@ -6,7 +6,7 @@
     (it "replicates the example"
       (expect (day23/part-1 (advent/read-problem-lines 23 :example 1))
               :to-be 12521))
-    (xit "solves the problem"
+    (it "solves the problem"
       (expect (day23/part-1 (advent/read-problem-lines 23 :problem 1))
               :to-be 16157)))
   (xdescribe "part 2"

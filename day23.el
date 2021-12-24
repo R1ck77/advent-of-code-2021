@@ -391,7 +391,7 @@ The move is in the form ((src . destination) letter cost)"
 
 (defvar day23/stepping nil)
 
-(defvar day23/debug-print-enabled t)
+(defvar day23/debug-print-enabled nil)
 
 (defun day23/debug-print (value)
   (when day23/debug-print-enabled
@@ -421,6 +421,79 @@ The move is in the form ((src . destination) letter cost)"
           (day23/s-compute-cost (cons (car off-d-locations) :d0) :d))))
      (t (error "Unexpected condition")))))
 
+(defun day23/projected-min-c-cost (state)
+  "Returns the minimum cost required to move both c in place"
+  (let* ((c-locations (-map #'car (--filter (eq (cadr it) :c) (-partition 2 state))))
+         (off-c-locations(--filter (not (or (eq it :c0) (eq it :c1))) c-locations)))
+    (cond
+     ;; both c *could* be in place
+     ((not off-c-locations) 0)
+     ;; both c are surely out of place
+     ((= (length off-c-locations) 2)
+      (+ (day23/s-compute-cost (cons (car off-c-locations) :c0) :c)
+         (day23/s-compute-cost (cons (cadr off-c-locations) :c1) :c)))
+     ((= (length off-c-locations) 1)
+      ;; one c is out of place
+      (let ((c0 (plist-get state :c0))
+            (c1 (plist-get state :c1)))
+        (if (eq c0 :c)
+            ;; c1 is out of place
+            (day23/s-compute-cost (cons (car off-c-locations) :c1) :c)           
+          ;; c0 is out of place
+          (day23/s-compute-cost (cons (car off-c-locations) :c0) :c))))
+     (t (error "Unexpected condition")))))
+
+(defun day23/projected-min-b-cost (state)
+  "Returns the minimum cost required to move both b in place"
+  (let* ((b-locations (-map #'car (--filter (eq (cadr it) :b) (-partition 2 state))))
+         (off-b-locations(--filter (not (or (eq it :b0) (eq it :b1))) b-locations)))
+    (cond
+     ;; both b *could* be in place
+     ((not off-b-locations) 0)
+     ;; both b are surely out of place
+     ((= (length off-b-locations) 2)
+      (+ (day23/s-compute-cost (cons (car off-b-locations) :b0) :b)
+         (day23/s-compute-cost (cons (cadr off-b-locations) :b1) :b)))
+     ((= (length off-b-locations) 1)
+      ;; one b is out of place
+      (let ((b0 (plist-get state :b0))
+            (b1 (plist-get state :b1)))
+        (if (eq b0 :b)
+            ;; b1 is out of place
+            (day23/s-compute-cost (cons (car off-b-locations) :b1) :b)           
+          ;; b0 is out of place
+          (day23/s-compute-cost (cons (car off-b-locations) :b0) :b))))
+     (t (error "Unexpected condition")))))
+
+(defun day23/projected-min-a-cost (state)
+  "Returns the minimum cost required to move both a in place"
+  (let* ((a-locations (-map #'car (--filter (eq (cadr it) :a) (-partition 2 state))))
+         (off-a-locations(--filter (not (or (eq it :a0) (eq it :a1))) a-locations)))
+    (cond
+     ;; both a *could* be in place
+     ((not off-a-locations) 0)
+     ;; both a are surely out of place
+     ((= (length off-a-locations) 2)
+      (+ (day23/s-compute-cost (cons (car off-a-locations) :a0) :a)
+         (day23/s-compute-cost (cons (cadr off-a-locations) :a1) :a)))
+     ((= (length off-a-locations) 1)
+      ;; one a is out of place
+      (let ((a0 (plist-get state :a0))
+            (a1 (plist-get state :a1)))
+        (if (eq a0 :a)
+            ;; a1 is out of place
+            (day23/s-compute-cost (cons (car off-a-locations) :a1) :a)           
+          ;; a0 is out of place
+          (day23/s-compute-cost (cons (car off-a-locations) :a0) :a))))
+     (t (error "Unexpected condition")))))
+
+
+(defun day23/projected-min-cost (state)
+  (+ (day23/projected-min-a-cost state)
+     (day23/projected-min-b-cost state)
+     (day23/projected-min-c-cost state)
+     (day23/projected-min-d-cost state)))
+
 (defun day23/evolve (state minimum-score)
   "Returns the minimum score for a win"
   (let ((current-score (plist-get state :score)))
@@ -429,12 +502,11 @@ The move is in the form ((src . destination) letter cost)"
       (read-string "Continue?"))
     (if (day23/s-is-win? state)
         (progn
-          (day23/debug-print (format "New win! %d" current-score))
+          (print (format "New win! %d" current-score))
+          (redisplay)
           current-score)
-      (if (>= (+ current-score (day23/projected-min-d-cost state)) minimum-score)
-          (progn
-            (day23/debug-print (format "USELESS! %d" current-score))
-            nil)          
+      (if (>= (+ current-score (day23/projected-min-cost state)) minimum-score)
+          (day23/debug-print (format "USELESS! %d" current-score))        
           (let ((next-moves (day23/s-next state)))
             (if next-moves
                 ;; how many are still below the previous minimum?
