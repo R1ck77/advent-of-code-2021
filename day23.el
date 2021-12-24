@@ -391,7 +391,7 @@ The move is in the form ((src . destination) letter cost)"
 
 (defvar day23/stepping nil)
 
-(defvar day23/debug-print-enabled nil)
+(defvar day23/debug-print-enabled t)
 
 (defun day23/debug-print (value)
   (when day23/debug-print-enabled
@@ -399,36 +399,76 @@ The move is in the form ((src . destination) letter cost)"
     (redisplay))
   nil)
 
+(defun day23/projected-min-d-cost (state)
+  "Returns the minimum cost required to move both d in place"
+  (let* ((d-locations (-map #'car (--filter (eq (cadr it) :d) (-partition 2 state))))
+         (off-d-locations(--filter (not (or (eq it :d0) (eq it :d1))) d-locations)))
+    (cond
+     ;; both d *could* be in place
+     ((not off-d-locations) 0)
+     ;; both d are surely out of place
+     ((= (length off-d-locations) 2)
+      (+ (day23/s-compute-cost (cons (car off-d-locations) :d0) :d)
+         (day23/s-compute-cost (cons (cadr off-d-locations) :d1) :d)))
+     ((= (length off-d-locations) 1)
+      ;; one d is out of place
+      (let ((d0 (plist-get state :d0))
+            (d1 (plist-get state :d1)))
+        (if (eq d0 :d)
+            ;; d1 is out of place
+            (day23/s-compute-cost (cons (car off-d-locations) :d1) :d)           
+          ;; d0 is out of place
+          (day23/s-compute-cost (cons (car off-d-locations) :d0) :d))))
+     (t (error "Unexpected condition")))))
+
 (defun day23/evolve (state minimum-score)
   "Returns the minimum score for a win"
   (let ((current-score (plist-get state :score)))
-    (day23/debug-print (format "%s\nState:\n%s\n(score: %d)\n" state (day23/to-string state) current-score))
+    ;(day23/debug-print (format "%s\nState:\n%s\n(score: %d)\n" state (day23/to-string state) current-score))
     (when day23/stepping
       (read-string "Continue?"))
     (if (day23/s-is-win? state)
         (progn
-          (print (format "New win! %d" current-score))
-          (redisplay)
+          (day23/debug-print (format "New win! %d" current-score))
           current-score)
-      (let ((next-moves (day23/s-next state)))
-        (if next-moves
-            ;; how many are still below the previous minimum?
-            (let ((useful-moves (--filter (< (+ current-score
-                                                (elt it 2))
-                                             minimum-score)
-                                          next-moves )))
-              (if useful-moves    ; otherwise is 'nil', that is, a dead end
-                  (--reduce-from (let ((new-score-or-nil (day23/evolve (day23/update state it) acc)))
-                                   (or (and new-score-or-nil (min new-score-or-nil acc)) acc))
-                                 minimum-score
-                                 useful-moves)
-                (day23/debug-print (format "OVERFLOW (%d + move > %d)" current-score minimum-score))))
-         (day23/debug-print "DEAD END!"))))))
+      (if (>= (+ current-score (day23/projected-min-d-cost state)) minimum-score)
+          (progn
+            (day23/debug-print (format "USELESS! %d" current-score))
+            nil)          
+          (let ((next-moves (day23/s-next state)))
+            (if next-moves
+                ;; how many are still below the previous minimum?
+                (let ((useful-moves (--filter (< (+ current-score
+                                                    (elt it 2))
+                                                 minimum-score)
+                                              next-moves )))
+                  (if useful-moves    ; otherwise is 'nil', that is, a dead end
+                      (--reduce-from (let ((new-score-or-nil (day23/evolve (day23/update state it) acc)))
+                                       (or (and new-score-or-nil (min new-score-or-nil acc)) acc))
+                                     minimum-score
+                                     useful-moves)
+                    (day23/debug-print (format "OVERFLOW (%d + move > %d)" current-score minimum-score))))
+              (day23/debug-print "DEAD END!")))))))
+
+(defun day23/debug--print-futures (text)
+  (let ((state (if (stringp text)
+                   (day23/s-read-problem (split-string text))
+                 text)))
+    (print (format "CURRENT (score: %d):\n%s\n%s"
+                   (plist-get state :score)
+                   state
+                   (day23/to-string state)))
+    (let ((next-states (--map (day23/update state it) (day23/s-next state))))
+      (print (format "FUTURES:\n"))
+      (--each next-states (print (format "*** SCORE: %d\n%s\n%s"
+                                         (plist-get it :score)
+                                         it
+                                         (day23/to-string it))))))
+  nil)
 
 
 (defun day23/part-1 (lines)
-  (day23/s-read-problem lines)
-  (error "Not yet implemented"))
+  (day23/evolve (day23/s-read-problem lines) day23/hyper--score))
 
 (defun day23/part-2 (lines)
   (day23/l-read-problem lines)
