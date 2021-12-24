@@ -12,7 +12,7 @@
 
 (defconst day23-l/hyper--score 1e20 "A score so high no combination can possibly reach it")
 
-(defconst day23-l/s-potential-paths
+(defconst day23-l/l-potential-paths
   '(
     :a0 ((:h1) (:h1 :h0) (:h2) (:h2 :h3) (:h2 :h3 :h4) (:h2 :h3 :h4 :h5) (:h2 :h3 :h4 :h5 :h6)
          (:h2 :b0) (:h2 :b0 :b1)
@@ -90,7 +90,7 @@
                          it))))))
     table))
 
-(defconst day23-l/s-from-to-paths (day23-l/convert-paths day23-l/s-potential-paths))
+(defconst day23-l/l-from-to-paths (day23-l/convert-paths day23-l/l-potential-paths))
 
 (defconst day23-l/raw--double-cost-moves
   '(
@@ -126,12 +126,12 @@
     all-costs))
 
 ;; This is constant, so caching is sort of mandatory
-(defconst day23-l/s-move-costs (day23-l/compute--moves-cost day23-l/s-from-to-paths))
+(defconst day23-l/l-move-costs (day23-l/compute--moves-cost day23-l/l-from-to-paths))
 
 (defvar day23-l/halls (list :h0 :h1 :h2 :h3 :h4 :h5 :h6))
 
-(defvar day23-l/s-rooms (list :a0 :a1 :b0 :b1 :c0 :c1 :d0 :d1))
-(defvar day23-l/s-locations (append day23-l/halls day23-l/s-rooms))
+(defvar day23-l/l-rooms (list :a0 :a1 :b0 :b1 :c0 :c1 :d0 :d1))
+(defvar day23-l/l-locations (append day23-l/halls day23-l/l-rooms))
 
 (defvar day23-l/l-rooms (list :a0 :a1 :a2 :a3 :b0 :b1 :b2 :b3 :c0 :c1 :c2 :c3 :d0 :d1 :d2 :d3))
 (defvar day23-l/l-locations (append day23-l/halls day23-l/l-rooms))
@@ -154,7 +154,7 @@
 (defun day23-l/get--string (state agent)
   (day23-l/symbol-to-letter (plist-get state agent)))
 
-(defun day23-l/s-to-string (state)
+(defun day23-l/l-to-string (state)
   (format (day23-l/preprocess-template "#############
 #xx.x.x.x.xx#
 ###x#x#x#x###
@@ -186,7 +186,7 @@
 
 (defun day23-l/to-string (state)
   (if (= (length state) 32)
-      (day23-l/s-to-string state)
+      (day23-l/l-to-string state)
     (day23-l/l-to-string state)))
 
 ;; TODO/FIXME loop, perhaps?
@@ -229,7 +229,7 @@
   (plist-get state :score))
 
 
-(defun day23-l/s-read-problem (lines)
+(defun day23-l/l-read-problem (lines)
   (let ((first-line (day23-l/read-agents (elt lines 2)))
         (second-line (day23-l/read-agents (elt lines 3))))
     (list :h0 nil :h1 nil :h2 nil :h3 nil :h4 nil :h5 nil :h6 nil
@@ -255,7 +255,7 @@
           :a3 (elt fourth-line 0) :b3 (elt fourth-line 1) :c3 (elt fourth-line 2) :d3 (elt fourth-line 3)
           :score 0)))
 
-(defun day23-l/s-is-win? (state)
+(defun day23-l/l-is-win? (state)
   (and (eq (day23-l/get-a0 state) :a)
        (eq (day23-l/get-a1 state) :a)
        (eq (day23-l/get-b0 state) :b)
@@ -268,17 +268,17 @@
 
 (defun day23-l/can-move-there? (state src dst)
   "Returns true if the path from src to dst is not blocked"
-  (let ((path (advent/get day23-l/s-from-to-paths (cons src dst))))
+  (let ((path (advent/get day23-l/l-from-to-paths (cons src dst))))
     (not (-non-nil (--map (plist-get state it) path)))))
 
 ;; TODO/FIXME unused?
-(defun day23-l/s-can-move? (state location)
+(defun day23-l/l-can-move? (state location)
   "returs the location if it's associated with an agent which has available moves"
   (if (memq location day23-l/halls)
-      (day23-l/s-can-move-from-hall? state location)
-    (day23-l/s-can-move-from-room? state location)))
+      (day23-l/l-can-move-from-hall? state location)
+    (day23-l/l-can-move-from-room? state location)))
 
-(defun day23-l/s-get-layout-for-room (letter)
+(defun day23-l/l-get-layout-for-room (letter)
   (case letter
     (:a '(:a0 :a1))
     (:b '(:b0 :b1))
@@ -286,13 +286,13 @@
     (:d '(:d0 :d1))
     (t (error "Invalid letter"))))
 
-(defun day23-l/s-room-occupants (state letter)
+(defun day23-l/l-room-occupants (state letter)
   "Returns a list of cons corresponding to the occupied rooms, from top to down"
   (-filter #'cdr
           (--map (cons it (plist-get state it))
-                 (day23-l/s-get-layout-for-room letter))))
+                 (day23-l/l-get-layout-for-room letter))))
 
-(defun day23-l/s-first-empty-for-room (state room)
+(defun day23-l/l-first-empty-for-room (state room)
   (--first (not (plist-get state it))
    (case room
      (:a '(:a1 :a0))
@@ -301,13 +301,13 @@
      (:d '(:d1 :d0))
      (t (error "Unexpected room"))))) 
 
-(defun day23-l/s-get-room-state (state letter)
+(defun day23-l/l-get-room-state (state letter)
   "Returns the state of the room corresopnding to the letter:
 
 :full                 if the room is occupied by the owners
 :space                if the room has space for a owner
 (<place> , <letter>)  the first guest that should leave"
-  (let ((guests (day23-l/s-room-occupants state letter)))
+  (let ((guests (day23-l/l-room-occupants state letter)))
     (cond
      ((not guests) :space) ;completely empty
      ((equal (-uniq (-map #'cdr guests)) (list letter)) ;all guests are of the correct letter
@@ -317,10 +317,10 @@
      (t (car guests) (car guests)))))
 
 (defun day23-l/get-rooms-state (state)
-  (list :a (day23-l/s-get-room-state state :a)
-        :b (day23-l/s-get-room-state state :b)
-        :c (day23-l/s-get-room-state state :c)
-        :d (day23-l/s-get-room-state state :d)))
+  (list :a (day23-l/l-get-room-state state :a)
+        :b (day23-l/l-get-room-state state :b)
+        :c (day23-l/l-get-room-state state :c)
+        :d (day23-l/l-get-room-state state :d)))
 
 (defun day23-l/get-room-moves (state room-states room)
   "Return a list of all possible moves"
@@ -344,13 +344,13 @@
     (--filter (day23-l/can-move-there? state (car it) (cdr it))
               (--map (let* ((src (car it))
                             (agent (cdr it))
-                            (destination (day23-l/s-first-empty-for-room state agent)))
+                            (destination (day23-l/l-first-empty-for-room state agent)))
                        (assert destination)
                        (cons src destination))
                      pos-agents-with-destination))))
 
-(defun day23-l/s-compute-cost (move letter)
-  (* (advent/get day23-l/s-move-costs move)
+(defun day23-l/l-compute-cost (move letter)
+  (* (advent/get day23-l/l-move-costs move)
      (case letter
        (:a 1)
        (:b 10)
@@ -358,7 +358,7 @@
        (:d 1000)
        (t (error "Unexpected letter!")))))
 
-(defun day23-l/s-next (state)
+(defun day23-l/l-next (state)
   "Return all possible moves of the current state, or nil if none exists
 
 The move is in the form ((src . destination) letter cost)"
@@ -368,7 +368,7 @@ The move is in the form ((src . destination) letter cost)"
                                     '(:a :b :c :d))))
           (hall-moves (day23-l/get-hall-moves state room-states)))
       (--map (let ((letter (plist-get state (car it))))
-               (list it letter (day23-l/s-compute-cost it letter)))
+               (list it letter (day23-l/l-compute-cost it letter)))
              (append room-moves hall-moves)))))
 
 (defun day23-l/update (state move)
@@ -404,17 +404,17 @@ The move is in the form ((src . destination) letter cost)"
      ((not off-d-locations) 0)
      ;; both d are surely out of place
      ((= (length off-d-locations) 2)
-      (+ (day23-l/s-compute-cost (cons (car off-d-locations) :d0) :d)
-         (day23-l/s-compute-cost (cons (cadr off-d-locations) :d1) :d)))
+      (+ (day23-l/l-compute-cost (cons (car off-d-locations) :d0) :d)
+         (day23-l/l-compute-cost (cons (cadr off-d-locations) :d1) :d)))
      ((= (length off-d-locations) 1)
       ;; one d is out of place
       (let ((d0 (plist-get state :d0))
             (d1 (plist-get state :d1)))
         (if (eq d0 :d)
             ;; d1 is out of place
-            (day23-l/s-compute-cost (cons (car off-d-locations) :d1) :d)           
+            (day23-l/l-compute-cost (cons (car off-d-locations) :d1) :d)           
           ;; d0 is out of place
-          (day23-l/s-compute-cost (cons (car off-d-locations) :d0) :d))))
+          (day23-l/l-compute-cost (cons (car off-d-locations) :d0) :d))))
      (t (error "Unexpected condition")))))
 
 (defun day23-l/projected-min-c-cost (state)
@@ -426,17 +426,17 @@ The move is in the form ((src . destination) letter cost)"
      ((not off-c-locations) 0)
      ;; both c are surely out of place
      ((= (length off-c-locations) 2)
-      (+ (day23-l/s-compute-cost (cons (car off-c-locations) :c0) :c)
-         (day23-l/s-compute-cost (cons (cadr off-c-locations) :c1) :c)))
+      (+ (day23-l/l-compute-cost (cons (car off-c-locations) :c0) :c)
+         (day23-l/l-compute-cost (cons (cadr off-c-locations) :c1) :c)))
      ((= (length off-c-locations) 1)
       ;; one c is out of place
       (let ((c0 (plist-get state :c0))
             (c1 (plist-get state :c1)))
         (if (eq c0 :c)
             ;; c1 is out of place
-            (day23-l/s-compute-cost (cons (car off-c-locations) :c1) :c)           
+            (day23-l/l-compute-cost (cons (car off-c-locations) :c1) :c)           
           ;; c0 is out of place
-          (day23-l/s-compute-cost (cons (car off-c-locations) :c0) :c))))
+          (day23-l/l-compute-cost (cons (car off-c-locations) :c0) :c))))
      (t (error "Unexpected condition")))))
 
 (defun day23-l/projected-min-b-cost (state)
@@ -448,17 +448,17 @@ The move is in the form ((src . destination) letter cost)"
      ((not off-b-locations) 0)
      ;; both b are surely out of place
      ((= (length off-b-locations) 2)
-      (+ (day23-l/s-compute-cost (cons (car off-b-locations) :b0) :b)
-         (day23-l/s-compute-cost (cons (cadr off-b-locations) :b1) :b)))
+      (+ (day23-l/l-compute-cost (cons (car off-b-locations) :b0) :b)
+         (day23-l/l-compute-cost (cons (cadr off-b-locations) :b1) :b)))
      ((= (length off-b-locations) 1)
       ;; one b is out of place
       (let ((b0 (plist-get state :b0))
             (b1 (plist-get state :b1)))
         (if (eq b0 :b)
             ;; b1 is out of place
-            (day23-l/s-compute-cost (cons (car off-b-locations) :b1) :b)           
+            (day23-l/l-compute-cost (cons (car off-b-locations) :b1) :b)           
           ;; b0 is out of place
-          (day23-l/s-compute-cost (cons (car off-b-locations) :b0) :b))))
+          (day23-l/l-compute-cost (cons (car off-b-locations) :b0) :b))))
      (t (error "Unexpected condition")))))
 
 (defun day23-l/projected-min-a-cost (state)
@@ -470,17 +470,17 @@ The move is in the form ((src . destination) letter cost)"
      ((not off-a-locations) 0)
      ;; both a are surely out of place
      ((= (length off-a-locations) 2)
-      (+ (day23-l/s-compute-cost (cons (car off-a-locations) :a0) :a)
-         (day23-l/s-compute-cost (cons (cadr off-a-locations) :a1) :a)))
+      (+ (day23-l/l-compute-cost (cons (car off-a-locations) :a0) :a)
+         (day23-l/l-compute-cost (cons (cadr off-a-locations) :a1) :a)))
      ((= (length off-a-locations) 1)
       ;; one a is out of place
       (let ((a0 (plist-get state :a0))
             (a1 (plist-get state :a1)))
         (if (eq a0 :a)
             ;; a1 is out of place
-            (day23-l/s-compute-cost (cons (car off-a-locations) :a1) :a)           
+            (day23-l/l-compute-cost (cons (car off-a-locations) :a1) :a)           
           ;; a0 is out of place
-          (day23-l/s-compute-cost (cons (car off-a-locations) :a0) :a))))
+          (day23-l/l-compute-cost (cons (car off-a-locations) :a0) :a))))
      (t (error "Unexpected condition")))))
 
 (defun day23-l/projected-min-cost (state)
@@ -495,14 +495,14 @@ The move is in the form ((src . destination) letter cost)"
     ;(day23-l/debug-print (format "%s\nState:\n%s\n(score: %d)\n" state (day23-l/to-string state) current-score))
     (when day23-l/stepping
       (read-string "Continue?"))
-    (if (day23-l/s-is-win? state)
+    (if (day23-l/l-is-win? state)
         (progn
           (print (format "New win! %d" current-score))
           (redisplay)
           current-score)
       (if (>= (+ current-score (day23-l/projected-min-cost state)) minimum-score)
           (day23-l/debug-print (format "USELESS! %d" current-score))        
-          (let ((next-moves (day23-l/s-next state)))
+          (let ((next-moves (day23-l/l-next state)))
             (if next-moves
                 ;; how many are still below the previous minimum?
                 (let ((useful-moves (--filter (< (+ current-score
@@ -519,13 +519,13 @@ The move is in the form ((src . destination) letter cost)"
 
 (defun day23-l/debug--print-futures (text)
   (let ((state (if (stringp text)
-                   (day23-l/s-read-problem (split-string text))
+                   (day23-l/l-read-problem (split-string text))
                  text)))
     (print (format "CURRENT (score: %d):\n%s\n%s"
                    (plist-get state :score)
                    state
                    (day23-l/to-string state)))
-    (let ((next-states (--map (day23-l/update state it) (day23-l/s-next state))))
+    (let ((next-states (--map (day23-l/update state it) (day23-l/l-next state))))
       (print (format "FUTURES:\n"))
       (--each next-states (print (format "*** SCORE: %d\n%s\n%s"
                                          (plist-get it :score)
@@ -534,7 +534,7 @@ The move is in the form ((src . destination) letter cost)"
   nil)
 
 (defun day23-l/solution (lines)
-  (day23-l/evolve (day23-l/s-read-problem lines) day23-l/hyper--score))
+  (day23-l/evolve (day23-l/l-read-problem lines) day23-l/hyper--score))
 
 (provide 'day23-l)
 
