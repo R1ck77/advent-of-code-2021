@@ -8,6 +8,8 @@
 ;;;      a1   b1   c1   d1
 ;;;      (possibly a1 and then a2)
 
+(defconst day23/hyper--score 1e20 "A score so high no combination can possibly reach it")
+
 (defconst day23/s-potential-paths
   '(
     :a0 ((:h1) (:h1 :h0) (:h2) (:h2 :h3) (:h2 :h3 :h4) (:h2 :h3 :h4 :h5) (:h2 :h3 :h4 :h5 :h6)
@@ -387,25 +389,31 @@ The move is in the form ((src . destination) letter cost)"
                :score
                (+ old-score cost))))
 
+(defvar day23/stepping nil)
+
+(defun day23/debug-print (value)
+  (if nil
+      (print value))
+  nil
+  )
+
 (defun day23/evolve (state)
   "Returns the minimum score for a win"
-  (print (format "%s\nState:\n%s\n(score: %d)\n" state (day23/to-string state) (plist-get state :score)))
-  (read-string "Contniue?")
+  (day23/debug-print (format "%s\nState:\n%s\n(score: %d)\n" state (day23/to-string state) (plist-get state :score)))
+  (when day23/stepping
+   (read-string "Contniue?"))
   (if (day23/s-is-win? state)
       (progn
         (print (format "New win! %d" (plist-get state :score)))
         (redisplay)
-       (plist-get state :score))
+        (plist-get state :score))
     (let ((next-moves (day23/s-next state)))
       (if next-moves ; otherwise is 'nil', that is, a dead end
         (if-let ((results (-non-nil
                            (--map (day23/evolve it)
                                   (--map (day23/update state it) next-moves)))))
             (apply #'min results))
-        (progn
-          (print "DEAD END!")
-          (redisplay)
-          nil)))))
+        (day23/debug-print "DEAD END!")))))
 
 
 (defun day23/part-1 (lines)
