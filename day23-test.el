@@ -2,7 +2,7 @@
 (require 'buttercup)
 
 (describe "Day 23"
-  (xdescribe "part 1"
+  (describe "part 1"
     (it "replicates the example"
       (expect (day23/part-1 (advent/read-problem-lines 23 :example 1))
               :to-be 12521))
@@ -15,4 +15,4 @@
               :to-be 44169))
     (it "solves the problem"
       (expect (day23/part-2 (advent/read-problem-lines 23 :problem 2))
-              :to-be 42))))
+              :to-be 43481))))
