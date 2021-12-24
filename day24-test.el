@@ -1,7 +1,7 @@
 (require 'day24)
 (require 'buttercup)
 
-(describe "Day 24"
+(describe "--- Day 24: Arithmetic Logic Unit ---"
   (describe "part 1"
     (it "solves the problem"
       (expect (day24/part-1 (advent/read-problem-lines 24 :problem))
