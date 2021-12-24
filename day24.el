@@ -160,10 +160,17 @@ SOME INDICES MAY BE MISSING (if they are nil)"
     (let ((sorted-states (day24/sort--alu-state alu)))
       (--map (day24/make-alu-from-pair it inp-var) sorted-states))))
 
+(defvar day24/debug--verbose t)
+
+(defun day24/debug--print (value)
+  (when day24/debug--verbose
+    (print value)
+    (redisplay)))
+
 (defun day24/evolve-alu (alu instruction)
   "Accepts an alu and an instruction and returns a list of evolved ALUs with the relevant indices"
   (day24/debug--assert-alu-ok alu)
-  (print (format "Executing   %s" instruction))
+  (day24/debug--print (format "Executing   %s" instruction))
   (let ((op (car instruction))
         (op1 (elt instruction 1)))
     (if (eq op :inp)
@@ -198,7 +205,8 @@ SOME INDICES MAY BE MISSING (if they are nil)"
       (format "LAST ALU: %s" alu))))
 
 (defun day24/part-1 (lines)
-  (error "Not yet implemented"))
+  (day24/evolve-all (list nil (day24/create-alu))
+                    (day24/read-opcodes lines)))
 
 (defun day24/part-2 (lines)
   (error "Not yet implemented"))
