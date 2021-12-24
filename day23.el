@@ -329,14 +329,8 @@
             (letter (cdr this-state)))
         ;; make sure the moves are valid
         (--filter (day23/can-move-there? state (car it) (cdr it))
-                  (append
-                   ;; room to to room move
-                   (when (eq :space (plist-get room-states letter)) ;only if there is space
-                     (let ((bottom-space (day23/s-first-empty-for-room state letter)))
-                       (assert bottom-space)
-                       (list (cons from bottom-space))))
-                   ;; room to corridor moves
-                   (--map (cons from it) day23/halls)))))))
+                  ;; room to corridor moves
+                  (--map (cons from it) day23/halls))))))
 
 (defun day23/get-hall-agents (state)
   (-filter #'cdr (--map (cons it (plist-get state it)) day23/halls)))
@@ -486,7 +480,6 @@ The move is in the form ((src . destination) letter cost)"
           ;; a0 is out of place
           (day23/s-compute-cost (cons (car off-a-locations) :a0) :a))))
      (t (error "Unexpected condition")))))
-
 
 (defun day23/projected-min-cost (state)
   (+ (day23/projected-min-a-cost state)
