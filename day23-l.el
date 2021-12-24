@@ -162,9 +162,6 @@
 
 (defvar day23-l/halls (list :h0 :h1 :h2 :h3 :h4 :h5 :h6))
 
-(defvar day23-l/l-rooms (list :a0 :a1 :b0 :b1 :c0 :c1 :d0 :d1))
-(defvar day23-l/l-locations (append day23-l/halls day23-l/l-rooms))
-
 (defvar day23-l/l-rooms (list :a0 :a1 :a2 :a3 :b0 :b1 :b2 :b3 :c0 :c1 :c2 :c3 :d0 :d1 :d2 :d3))
 (defvar day23-l/l-locations (append day23-l/halls day23-l/l-rooms))
 
@@ -186,20 +183,7 @@
 (defun day23-l/get--string (state agent)
   (day23-l/symbol-to-letter (plist-get state agent)))
 
-(defun day23-l/l-to-string (state)
-  (format (day23-l/preprocess-template "#############
-#xx.x.x.x.xx#
-###x#x#x#x###
-  #x#x#x#x#
-  #########")
-          (day23-l/get--string state :h0) (day23-l/get--string state :h1)
-          (day23-l/get--string state :h2) (day23-l/get--string state :h3)
-          (day23-l/get--string state :h4) (day23-l/get--string state :h5)
-          (day23-l/get--string state :h6)
-          (day23-l/get--string state :a0) (day23-l/get--string state :b0) (day23-l/get--string state :c0) (day23-l/get--string state :d0)
-          (day23-l/get--string state :a1) (day23-l/get--string state :b1) (day23-l/get--string state :c1) (day23-l/get--string state :d1)))
-
-(defun day23-l/l-to-string (state)
+(defun day23-l/to-string (state)
   (format (day23-l/preprocess-template "#############
 #xx.x.x.x.xx#
 ###x#x#x#x###
@@ -215,25 +199,6 @@
           (day23-l/get--string state :a1) (day23-l/get--string state :b1) (day23-l/get--string state :c1) (day23-l/get--string state :d1)
           (day23-l/get--string state :a2) (day23-l/get--string state :b2) (day23-l/get--string state :c2) (day23-l/get--string state :d2)
           (day23-l/get--string state :a3) (day23-l/get--string state :b3) (day23-l/get--string state :c3) (day23-l/get--string state :d3)))
-
-(defun day23-l/to-string (state)
-  (if (= (length state) 32)
-      (day23-l/l-to-string state)
-    (day23-l/l-to-string state)))
-
-;; TODO/FIXME loop, perhaps?
-(defmacro day23-l/make--hall-getter (i)
-         (let ((hall-name (intern (format ":h%d" i)))
-               (function-name (intern (format "day23-l/get-h%d" i))))
-                 `(defun ,function-name (state)
-                    (plist-get state ,hall-name))))
-(day23-l/make--hall-getter 0)
-(day23-l/make--hall-getter 1)
-(day23-l/make--hall-getter 2)
-(day23-l/make--hall-getter 3)
-(day23-l/make--hall-getter 4)
-(day23-l/make--hall-getter 5)
-(day23-l/make--hall-getter 6)
 
 (defmacro day23-l/make--room-getter (pos)
          (let ((letter-symbol (intern (format ":%s" pos)))
@@ -260,21 +225,6 @@
 (defun day23-l/get-score (state)
   (plist-get state :score))
 
-
-(defun day23-l/l-read-problem (lines)
-  (let ((first-line (day23-l/read-agents (elt lines 2)))
-        (second-line (day23-l/read-agents (elt lines 3))))
-    (list :h0 nil :h1 nil :h2 nil :h3 nil :h4 nil :h5 nil :h6 nil
-          :a0 (elt first-line 0)
-          :b0 (elt first-line 1)
-          :c0 (elt first-line 2)
-          :d0 (elt first-line 3)
-          :a1 (elt second-line 0)
-          :b1 (elt second-line 1)
-          :c1 (elt second-line 2)
-          :d1 (elt second-line 3)
-          :score 0)))
-
 (defun day23-l/l-read-problem (lines)
   (let ((first-line (day23-l/read-agents (elt lines 2)))
         (second-line (day23-l/read-agents (elt lines 3)))
@@ -290,12 +240,20 @@
 (defun day23-l/l-is-win? (state)
   (and (eq (day23-l/get-a0 state) :a)
        (eq (day23-l/get-a1 state) :a)
+       (eq (day23-l/get-a2 state) :a)
+       (eq (day23-l/get-a3 state) :a)
        (eq (day23-l/get-b0 state) :b)
        (eq (day23-l/get-b1 state) :b)
+       (eq (day23-l/get-b2 state) :b)
+       (eq (day23-l/get-b3 state) :b)
        (eq (day23-l/get-c0 state) :c)
        (eq (day23-l/get-c1 state) :c)
+       (eq (day23-l/get-c2 state) :c)
+       (eq (day23-l/get-c3 state) :c)
        (eq (day23-l/get-d0 state) :d)
        (eq (day23-l/get-d1 state) :d)
+       (eq (day23-l/get-d2 state) :d)
+       (eq (day23-l/get-d3 state) :d)
        (day23-l/get-score state)))
 
 (defun day23-l/can-move-there? (state src dst)
@@ -303,19 +261,12 @@
   (let ((path (advent/get day23-l/l-from-to-paths (cons src dst))))
     (not (-non-nil (--map (plist-get state it) path)))))
 
-;; TODO/FIXME unused?
-(defun day23-l/l-can-move? (state location)
-  "returs the location if it's associated with an agent which has available moves"
-  (if (memq location day23-l/halls)
-      (day23-l/l-can-move-from-hall? state location)
-    (day23-l/l-can-move-from-room? state location)))
-
 (defun day23-l/l-get-layout-for-room (letter)
   (case letter
-    (:a '(:a0 :a1))
-    (:b '(:b0 :b1))
-    (:c '(:c0 :c1))
-    (:d '(:d0 :d1))
+    (:a '(:a0 :a1 :a2 :a3))
+    (:b '(:b0 :b1 :b2 :b3))
+    (:c '(:c0 :c1 :c2 :c3))
+    (:d '(:d0 :d1 :d2 :d3))
     (t (error "Invalid letter"))))
 
 (defun day23-l/l-room-occupants (state letter)
@@ -327,10 +278,10 @@
 (defun day23-l/l-first-empty-for-room (state room)
   (--first (not (plist-get state it))
    (case room
-     (:a '(:a1 :a0))
-     (:b '(:b1 :b0))
-     (:c '(:c1 :c0))
-     (:d '(:d1 :d0))
+     (:a '(:a3 :a2 :a1 :a0))
+     (:b '(:b3 :b2 :b1 :b0))
+     (:c '(:c3 :c2 :c1 :c0))
+     (:d '(:d3 :d2 :d1 :d0))
      (t (error "Unexpected room"))))) 
 
 (defun day23-l/l-get-room-state (state letter)
@@ -343,7 +294,7 @@
     (cond
      ((not guests) :space) ;completely empty
      ((equal (-uniq (-map #'cdr guests)) (list letter)) ;all guests are of the correct letter
-      (if (= (length guests) 2)
+      (if (= (length guests) 4)
           :full ;and they fill the room
         :space))
      (t (car guests) (car guests)))))
@@ -419,7 +370,7 @@ The move is in the form ((src . destination) letter cost)"
 
 (defvar day23-l/stepping nil)
 
-(defvar day23-l/debug-print-enabled nil)
+(defvar day23-l/debug-print-enabled t)
 
 (defun day23-l/debug-print (value)
   (when day23-l/debug-print-enabled
@@ -430,90 +381,58 @@ The move is in the form ((src . destination) letter cost)"
 (defun day23-l/projected-min-d-cost (state)
   "Returns the minimum cost required to move both d in place"
   (let* ((d-locations (-map #'car (--filter (eq (cadr it) :d) (-partition 2 state))))
-         (off-d-locations(--filter (not (or (eq it :d0) (eq it :d1))) d-locations)))
-    (cond
-     ;; both d *could* be in place
-     ((not off-d-locations) 0)
-     ;; both d are surely out of place
-     ((= (length off-d-locations) 2)
-      (+ (day23-l/l-compute-cost (cons (car off-d-locations) :d0) :d)
-         (day23-l/l-compute-cost (cons (cadr off-d-locations) :d1) :d)))
-     ((= (length off-d-locations) 1)
-      ;; one d is out of place
-      (let ((d0 (plist-get state :d0))
-            (d1 (plist-get state :d1)))
-        (if (eq d0 :d)
-            ;; d1 is out of place
-            (day23-l/l-compute-cost (cons (car off-d-locations) :d1) :d)           
-          ;; d0 is out of place
-          (day23-l/l-compute-cost (cons (car off-d-locations) :d0) :d))))
-     (t (error "Unexpected condition")))))
-
-(defun day23-l/projected-min-c-cost (state)
-  "Returns the minimum cost required to move both c in place"
-  (let* ((c-locations (-map #'car (--filter (eq (cadr it) :c) (-partition 2 state))))
-         (off-c-locations(--filter (not (or (eq it :c0) (eq it :c1))) c-locations)))
-    (cond
-     ;; both c *could* be in place
-     ((not off-c-locations) 0)
-     ;; both c are surely out of place
-     ((= (length off-c-locations) 2)
-      (+ (day23-l/l-compute-cost (cons (car off-c-locations) :c0) :c)
-         (day23-l/l-compute-cost (cons (cadr off-c-locations) :c1) :c)))
-     ((= (length off-c-locations) 1)
-      ;; one c is out of place
-      (let ((c0 (plist-get state :c0))
-            (c1 (plist-get state :c1)))
-        (if (eq c0 :c)
-            ;; c1 is out of place
-            (day23-l/l-compute-cost (cons (car off-c-locations) :c1) :c)           
-          ;; c0 is out of place
-          (day23-l/l-compute-cost (cons (car off-c-locations) :c0) :c))))
-     (t (error "Unexpected condition")))))
+         ;; all location that contain a d and are not in d0 d1 d2 d3
+         (off-d-locations(--filter (not (or (eq it :d0)
+                                            (eq it :d1)
+                                            (eq it :d2)
+                                            (eq it :d3)))
+                                   d-locations))
+         ;; all d-room locations not occupied by a 'd'
+         (empty-places (--filter (not (eq (plist-get state it) :d))'(:d0 :d1 :d2 :d3))))
+    (assert (= (length empty-places) (length off-d-locations)))
+    (apply #'+ (--map (day23-l/l-compute-cost it :d)  (-zip empty-places off-d-locations)))))
 
 (defun day23-l/projected-min-b-cost (state)
   "Returns the minimum cost required to move both b in place"
   (let* ((b-locations (-map #'car (--filter (eq (cadr it) :b) (-partition 2 state))))
-         (off-b-locations(--filter (not (or (eq it :b0) (eq it :b1))) b-locations)))
-    (cond
-     ;; both b *could* be in place
-     ((not off-b-locations) 0)
-     ;; both b are surely out of place
-     ((= (length off-b-locations) 2)
-      (+ (day23-l/l-compute-cost (cons (car off-b-locations) :b0) :b)
-         (day23-l/l-compute-cost (cons (cadr off-b-locations) :b1) :b)))
-     ((= (length off-b-locations) 1)
-      ;; one b is out of place
-      (let ((b0 (plist-get state :b0))
-            (b1 (plist-get state :b1)))
-        (if (eq b0 :b)
-            ;; b1 is out of place
-            (day23-l/l-compute-cost (cons (car off-b-locations) :b1) :b)           
-          ;; b0 is out of place
-          (day23-l/l-compute-cost (cons (car off-b-locations) :b0) :b))))
-     (t (error "Unexpected condition")))))
+         ;; all location that contain a b and are not in b0 b1 b2 b3
+         (off-b-locations(--filter (not (or (eq it :b0)
+                                            (eq it :b1)
+                                            (eq it :b2)
+                                            (eq it :b3)))
+                                   b-locations))
+         ;; all b-room locations not occupied by a 'b'
+         (empty-places (--filter (not (eq (plist-get state it) :b))'(:b0 :b1 :b2 :b3))))
+    (assert (= (length empty-places) (length off-b-locations)))
+    (apply #'+ (--map (day23-l/l-compute-cost it :b)  (-zip empty-places off-b-locations)))))
+
+(defun day23-l/projected-min-c-cost (state)
+  "Returns the minimum cost required to move both c in place"
+  (let* ((c-locations (-map #'car (--filter (eq (cadr it) :c) (-partition 2 state))))
+         ;; all location that contain a c and are not in c0 c1 c2 c3
+         (off-c-locations(--filter (not (or (eq it :c0)
+                                            (eq it :c1)
+                                            (eq it :c2)
+                                            (eq it :c3)))
+                                   c-locations))
+         ;; all c-room locations not occupied by a 'c'
+         (empty-places (--filter (not (eq (plist-get state it) :c))'(:c0 :c1 :c2 :c3))))
+    (assert (= (length empty-places) (length off-c-locations)))
+    (apply #'+ (--map (day23-l/l-compute-cost it :c)  (-zip empty-places off-c-locations)))))
 
 (defun day23-l/projected-min-a-cost (state)
   "Returns the minimum cost required to move both a in place"
   (let* ((a-locations (-map #'car (--filter (eq (cadr it) :a) (-partition 2 state))))
-         (off-a-locations(--filter (not (or (eq it :a0) (eq it :a1))) a-locations)))
-    (cond
-     ;; both a *could* be in place
-     ((not off-a-locations) 0)
-     ;; both a are surely out of place
-     ((= (length off-a-locations) 2)
-      (+ (day23-l/l-compute-cost (cons (car off-a-locations) :a0) :a)
-         (day23-l/l-compute-cost (cons (cadr off-a-locations) :a1) :a)))
-     ((= (length off-a-locations) 1)
-      ;; one a is out of place
-      (let ((a0 (plist-get state :a0))
-            (a1 (plist-get state :a1)))
-        (if (eq a0 :a)
-            ;; a1 is out of place
-            (day23-l/l-compute-cost (cons (car off-a-locations) :a1) :a)           
-          ;; a0 is out of place
-          (day23-l/l-compute-cost (cons (car off-a-locations) :a0) :a))))
-     (t (error "Unexpected condition")))))
+         ;; all location that contain a a and are not in a0 a1 a2 a3
+         (off-a-locations(--filter (not (or (eq it :a0)
+                                            (eq it :a1)
+                                            (eq it :a2)
+                                            (eq it :a3)))
+                                   a-locations))
+         ;; all a-room locations not occupied by a 'a'
+         (empty-places (--filter (not (eq (plist-get state it) :a))'(:a0 :a1 :a2 :a3))))
+    (assert (= (length empty-places) (length off-a-locations)))
+    (apply #'+ (--map (day23-l/l-compute-cost it :a)  (-zip empty-places off-a-locations)))))
 
 (defun day23-l/projected-min-cost (state)
   (+ (day23-l/projected-min-a-cost state)
