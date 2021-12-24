@@ -297,7 +297,7 @@
       (if (= (length guests) 4)
           :full ;and they fill the room
         :space))
-     (t (car guests) (car guests)))))
+     (t (car guests)))))
 
 (defun day23-l/get-rooms-state (state)
   (list :a (day23-l/l-get-room-state state :a)
@@ -466,7 +466,7 @@ The move is in the form ((src . destination) letter cost)"
                                      minimum-score
                                      useful-moves)
                     (day23-l/debug-print (format "OVERFLOW (%d + move > %d)" current-score minimum-score))))
-              (day23-l/debug-print "DEAD END!")))))))
+              ))))))
 
 (defun day23-l/debug--print-futures (text)
   (let ((state (if (stringp text)

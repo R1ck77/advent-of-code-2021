@@ -311,7 +311,7 @@
       (if (= (length guests) 2)
           :full ;and they fill the room
         :space))
-     (t (car guests) (car guests)))))
+     (t (car guests)))))
 
 (defun day23-s/get-rooms-state (state)
   (list :a (day23-s/s-get-room-state state :a)
