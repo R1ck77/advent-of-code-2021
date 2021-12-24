@@ -391,29 +391,39 @@ The move is in the form ((src . destination) letter cost)"
 
 (defvar day23/stepping nil)
 
-(defun day23/debug-print (value)
-  (if nil
-      (print value))
-  nil
-  )
+(defvar day23/debug-print-enabled nil)
 
-(defun day23/evolve (state)
+(defun day23/debug-print (value)
+  (when day23/debug-print-enabled
+    (print value)
+    (redisplay))
+  nil)
+
+(defun day23/evolve (state minimum-score)
   "Returns the minimum score for a win"
-  (day23/debug-print (format "%s\nState:\n%s\n(score: %d)\n" state (day23/to-string state) (plist-get state :score)))
-  (when day23/stepping
-   (read-string "Contniue?"))
-  (if (day23/s-is-win? state)
-      (progn
-        (print (format "New win! %d" (plist-get state :score)))
-        (redisplay)
-        (plist-get state :score))
-    (let ((next-moves (day23/s-next state)))
-      (if next-moves ; otherwise is 'nil', that is, a dead end
-        (if-let ((results (-non-nil
-                           (--map (day23/evolve it)
-                                  (--map (day23/update state it) next-moves)))))
-            (apply #'min results))
-        (day23/debug-print "DEAD END!")))))
+  (let ((current-score (plist-get state :score)))
+    (day23/debug-print (format "%s\nState:\n%s\n(score: %d)\n" state (day23/to-string state) current-score))
+    (when day23/stepping
+      (read-string "Continue?"))
+    (if (day23/s-is-win? state)
+        (progn
+          (print (format "New win! %d" current-score))
+          (redisplay)
+          current-score)
+      (let ((next-moves (day23/s-next state)))
+        (if next-moves
+            ;; how many are still below the previous minimum?
+            (let ((useful-moves (--filter (< (+ current-score
+                                                (elt it 2))
+                                             minimum-score)
+                                          next-moves )))
+              (if useful-moves    ; otherwise is 'nil', that is, a dead end
+                  (--reduce-from (let ((new-score-or-nil (day23/evolve (day23/update state it) acc)))
+                                   (or (and new-score-or-nil (min new-score-or-nil acc)) acc))
+                                 minimum-score
+                                 useful-moves)
+                (day23/debug-print (format "OVERFLOW (%d + move > %d)" current-score minimum-score))))
+         (day23/debug-print "DEAD END!"))))))
 
 
 (defun day23/part-1 (lines)
