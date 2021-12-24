@@ -214,6 +214,9 @@ SOME INDICES MAY BE MISSING (if they are nil)"
 (provide 'day24)
 
 (setq example (day24/read-opcodes (advent/read-problem-lines 24 :problem)))
+(setq negate (day24/read-opcodes (list "inp x" "mul x -1")))
+(setq is-trice? (day24/read-opcodes (list "inp z" "inp x" "mul z 3" "eql z x")))
+(setq binary-conversion (day24/read-opcodes (list "inp w" "add z w" "mod z 2" "div w 2" "add y w" "mod y 2" "div w 2" "add x w" "mod x 2" "div w 2" "mod w 2")))
 
 (setq max-specpdl-size 10000)
 (setq max-lisp-eval-depth 10000)
