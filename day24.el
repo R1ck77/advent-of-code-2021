@@ -67,17 +67,41 @@
 (defun day24/mul (alu op1 op2)
   (day24/binary-operation alu #'day24/mul--a-b op1 op2))
 
-(defun day24/operate--vector (v cell-operation)
+(defun day24/merge-indices (list1 list2)
+  (-uniq (append list1 list2)))
+
+(defun day24/reduce-values (values)
+  "merge the indices together"
+  (let ((set (advent/table)))
+    (--each (-partition 2 values)
+      (let ((value (car it))
+            (indices (cadr it)))
+        (advent/put set value (day24/merge-indices indices (advent/get set value '())))))
+    (let ((new-list))
+      (maphash (lambda (value indices)
+                 (setq new-list (append new-list (list value indices))))
+               set)
+      new-list)))
+
+(defun day24/reduce-input (input)
+  (let ((new-values (day24/reduce-values (cadr input))))
+    (if (= (length new-values) 2)
+        (car new-values)
+      (list (car input) new-values))))
+
+(defun day24/operate--vector (values cell-operation)
   "Returns a new vector"
-  (let ((new-vector (copy-sequence v)))
-    (loop for i from 0 below 9 do
-          (let ((old-value (aref v i)))
-            (aset new-vector i (funcall cell-operation old-value))))
-    new-vector))
+  (--reduce-from (append acc
+                         (let ((value (car it))
+                               (indices (cadr it)))
+                           (list (funcall cell-operation value)
+                                 indices)))
+                 ()
+                 (-partition 2 values)))
 
 (defun day24/input--operation (input f)
-  (list (car input)
-        (day24/operate--vector (cadr input) f)))
+  (day24/reduce-input (list (car input)
+                            (day24/operate--vector (cadr input) f))))
 
 (defun day24/input--add (input value)
   (day24/input--operation input (lambda (x) (+ x value))))
@@ -155,6 +179,7 @@
        (not (and (> op 0)
                  (< op 10)))))
 
+;; TODO/FIXME wrong
 (defun day24/input--eql-inputs (op1 op2)
   (let ((v1 (cadr op1))
         (v2 (cadr op2)))
@@ -210,10 +235,13 @@
                     (elt instruction 2))
            inputs))))
 
+(defun day24/starting-input-data ()
+  (--reduce-from (append acc (list it (list it))) '() (number-sequence 1 9)))
+
 (defun day24/create-inputs (count)
   (nreverse
    (--map (list (format ":i%d" it)
-                (apply #'vector (number-sequence 1 9)))
+                (day24/starting-input-data))
           (number-sequence 0 (1- count)))))
 
 (defun day24/simplify-all (input-count instructions)
