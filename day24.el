@@ -43,11 +43,11 @@
 
 (defun day24/mul--a-b (op1 op2)
   (if (numberp op1)
-        (cond
-         ((zerop op1) 0)
-         ((= op1 1) op2)
-         ((numberp op2) (* op1 op2))
-         (t (list #'* op1 op2)))
+      (cond
+       ((zerop op1) 0)
+       ((= op1 1) op2)
+       ((numberp op2) (* op1 op2))
+       (t (list #'* op1 op2)))
     (if (numberp op2)
         (cond
          ((zerop op2) 0)
@@ -89,7 +89,7 @@
         (cond
          ((= op2 1) 0)
 ;         ((equal op1 op2) 0) ;; there is a corner case where the dividend could be 0, this could result in an error! :(
-         ((numberp op2) (mod op1 op2))
+         ((numberp op1) (mod op1 op2))
          (t (list #'mod op1 op2)))
       (list #'mod op1 op2))))
 
@@ -97,7 +97,7 @@
   (day24/binary-operation alu #'day24/mod--a-b op1 op2)  )
 
 (defun day24/div--a-b (op1 op2)
-  (when (and (numberp op2) (== op2 0))
+  (when (and (numberp op2) (= op2 0))
     (error "Zero divisor"))
   (if (numberp op1)
       (cond
@@ -108,7 +108,7 @@
         (cond
          ((= op2 1) op1)
 ;         ((equal op1 op2) 1) ;; there is a corner case where the dividend could be 0, this could result in an error :(
-         ((numberp op2) (truncate (/ op1 op2)))
+         ((numberp op1) (truncate (/ op1 op2)))
          (t (list #'truncate (list #'/ op1 op2))))
       (list #'truncate (list #'/ op1 op2)))))
 
@@ -131,28 +131,49 @@
   (assert input)
   (plist-put alu instruction input))
 
-(defun day24/simplify (alu instruction inputs)
+(defun day24/simplify (alu-inputs instruction)
   "Returns a new cons (ALU . remaining-inputs) with an ALU with a new symbolic state"
-  (if (eq (car instruction) :inp)
-      ;; inp is special
-      (list (day24/inp alu (elt instruction 1) (pop inputs)) inputs)    
-    (list (funcall (case (car instruction)
-                (:mul #'day24/mul)
-                (:add #'day24/add)
-                (:mod #'day24/mod)
-                (:div #'day24/div)
-                (:eql #'day24/eql))
-              alu
-              (elt instruction 1)
-              (elt instruction 2))
-          inputs)))
+  (let ((alu (car alu-inputs))
+        (inputs (cadr alu-inputs)))
+    (print instruction)
+    (print inputs)
+    (redisplay)
+   (if (eq (car instruction) :inp)
+       ;; inp is special
+       (let ((next-input (pop inputs)))
+        (list (day24/inp alu (elt instruction 1) next-input) inputs))    
+     (list (funcall (case (car instruction)
+                      (:mul #'day24/mul)
+                      (:add #'day24/add)
+                      (:mod #'day24/mod)
+                      (:div #'day24/div)
+                      (:eql #'day24/eql))
+                    alu
+                    (elt instruction 1)
+                    (elt instruction 2))
+           inputs))))
 
+(defun day24/create-inputs (count)
+  (nreverse
+   (--map (make-symbol (format "i%d" it))
+          (number-sequence 0 (1- count)))))
+
+(defun day24/simplify-all (input-count instructions)
+  "Returns the z value of the processor"
+  (let ((alu-inputs (--reduce-from (day24/simplify acc it)
+                        (list (day24/create-alu)
+                              (day24/create-inputs input-count))
+                        instructions)))
+    ;; I expect all inputs to be consumed
+    (plist-get (car alu-inputs) :z)))
 
 (defun day24/part-1 (lines)
-  (day24/read-opcodes lines))
+  (day24/simplify-all 14 (day24/read-opcodes lines)))
 
 (defun day24/part-2 (lines)
   (error "Not yet implemented"))
 
-
 (provide 'day24)
+
+(setq example (day24/read-opcodes (advent/read-problem-lines 24 :problem)))
+
