@@ -104,11 +104,14 @@
    (numberp (plist-get alu :w))
    alu))
 
+(defun day24/wrong-weird-base (number)
+  (string-to-number (s-replace "0" "1" (number-to-string number))))
+
 (defun day24/number-to-input (number &optional size)
   (let ((raw-input (-map #'string-to-number (split-string (number-to-string number) "" t))))
     (append (-repeat (- (or size 14) (length raw-input)) 1) raw-input)))
 
-(defun day24/validate-input (instructions lnumber)
+(defun day24/get-output-for-input (instructions lnumber)
   (let ((evolved (--reduce-from (let ((next-instruction it)
                               (alu (car acc))
                               (inputs (cdr acc)))
@@ -122,7 +125,7 @@
                             (cons nil nil)))
                         (cons (day24/create-alu) lnumber)
                         instructions)))
-    (and (car evolved) (= (plist-get (car evolved) :z) 0))))
+    (and (car evolved) (plist-get (car evolved) :z) )))
 
 (defun day24/part-1 (lines)
   (day24/evolve-all nil
