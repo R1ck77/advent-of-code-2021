@@ -68,50 +68,6 @@ v.v.v>.>v.
 ..v.v>>v.v
 v.v.>...v."
 
-                  10
-                  "..>..>>vv.
-v.....>>.v
-..v.v>>>v>
-v>.>v.>>>.
-..v>v.vv.v
-.v.>>>.v..
-v.v..>v>..
-..v...>v.>
-.vv..v>vv."
-
-                  20
-                  "v>.....>>.
->vv>.....v
-.>v>v.vv>>
-v>>>v.>v.>
-....vv>v..
-.v.>>>vvv.
-..v..>>vv.
-v.v...>>.v
-..v.....v>"
-
-                  30
-                  ".vv.v..>>>
-v>...v...>
->.v>.>vv.>
->v>.>.>v.>
-.>..v.vv..
-..v>..>>v.
-....v>..>v
-v.v...>vv>
-v.v...>vvv"
-
-                  40
-                  ">>v>v..v..
-..>>v..vv.
-..>>>v.>.v
-..>>>>vvv>
-v.....>...
-v.v...>v>>
->vv.....v>
-.>v...v.>v
-vvv.v..v.>"
-
                   50
                   "..>>v>vv.v
 ..v.>>vv..
@@ -121,50 +77,6 @@ vvv....>vv
 ..v....>>>
 v>.......>
 .vv>....v>
-.>v.vv.v.."
-
-                  55
-                  "..>>v>vv..
-..v.>>vv..
-..>>v>>vv.
-..>>>>>vv.
-v......>vv
-v>v....>>v
-vvv...>..>
->vv.....>.
-.>v.vv.v.."
-
-                  56
-                  "..>>v>vv..
-..v.>>vv..
-..>>v>>vv.
-..>>>>>vv.
-v......>vv
-v>v....>>v
-vvv....>.>
->vv......>
-.>v.vv.v.."
-
-                  57
-                  "..>>v>vv..
-..v.>>vv..
-..>>v>>vv.
-..>>>>>vv.
-v......>vv
-v>v....>>v
-vvv.....>>
->vv......>
-.>v.vv.v.."
-
-                  58
-                  "..>>v>vv..
-..v.>>vv..
-..>>v>>vv.
-..>>>>>vv.
-v......>vv
-v>v....>>v
-vvv.....>>
->vv......>
 .>v.vv.v.."))
 
 (describe "Day 25"
@@ -210,11 +122,4 @@ vvv.....>>
               :to-be 58))
     (it "solves the problem"
       (expect (day25/part-1 (advent/read-grid 25 :problem #'identity))
-              :to-be 417)))
-  (xdescribe "part 2"
-    (it "replicates the example"
-      (expect (day25/part-2 (advent/read-grid 25 :example #'identity))
-              :to-be 42))
-    (xit "solves the problem"
-      (expect (day25/part-2 (advent/read-grid 25 :problem #'identity))
-              :to-be 42))))
+              :to-be 417))))
