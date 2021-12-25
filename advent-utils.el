@@ -74,6 +74,10 @@ It binds:
   (declare (indent 1))
   `(advent/each-hash ,table (lambda (it-key it-value) ,@forms)))
 
+(defun advent/get-grid-size (grid)
+  (cons (length grid)
+        (length (aref grid 0))))
+
 (defun advent/create--grid-line (row columns)
   (--map (cons row it) (number-sequence 0 (1- columns))))
 
@@ -166,11 +170,12 @@ The value is binded to 'it'"
   (declare (indent 1))
   `(advent/update-grid! ,grid (lambda (it) ,@forms)))
 
-(defun advent/each-grid (grid f)
+;; TODO/FIXME some serious bug here. If f contains an "f123 it's bad
+(defun advent/each-grid (grid f123)
   (loop for i below (length grid) do
         (loop for j below (length (aref grid 0)) do
               (let ((coord (cons i j)))
-                (funcall f coord (advent/grid-get grid coord ))))))
+                (funcall f123 coord (advent/grid-get grid coord ))))))
 
 (defmacro advent/-each-grid (grid &rest forms)
   (declare (indent 1))
