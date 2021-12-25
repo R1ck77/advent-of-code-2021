@@ -41,6 +41,10 @@
                          (plist-get alu op2))))
     (plist-put alu op1 (funcall function old-value other-value))))
 
+(defun day24/is-input? (value)
+  (and (listp value)
+       (stringp (car value))))
+
 (defun day24/mul--a-b (op1 op2)
   (if (numberp op1)
       (cond
@@ -58,17 +62,33 @@
 (defun day24/mul (alu op1 op2)
   (day24/binary-operation alu #'day24/mul--a-b op1 op2))
 
+(defun day24/operate--vector (v cell-operation)
+  "Returns a new vector"
+  (let ((new-vector (copy-sequence v)))
+    (loop for i from 0 below 9 do
+          (let ((old-value (aref v i)))
+            (aset new-vector i (funcall cell-operation old-value))))
+    new-vector))
+
+(defun day24/input--add (input value)
+  (list (car input)
+        (day24/operate--vector (cadr input)
+                               (lambda (x)
+                                 (+ x value)))))
+
 ;; TODO Maybe you can check for - equality?
 (defun day24/add--a-b (op1 op2)
   (if (numberp op1)
         (cond
          ((zerop op1) op2)
          ((numberp op2) (+ op1 op2))
+         ((day24/is-input? op2) (day24/input--add op2 op1))
          (t (list #'+ op1 op2)))
     (if (numberp op2)
         (cond
          ((zerop op2) op1)
          ((= op2 1) op1)
+         ((day24/is-input? op1) (day24/input--add op1 op2))
          (t (list #'+ op2 op1)))
       (list #'+ op2 op1))))
 
@@ -164,14 +184,10 @@
                     (elt instruction 2))
            inputs))))
 
-(defun day24/is-input? (value)
-  (and (not (numberp value))
-       (symbolp value)
-       (s-starts-with? ":i" (symbol-name value))))
-
 (defun day24/create-inputs (count)
   (nreverse
-   (--map (intern (format ":i%d" it))
+   (--map (list (format ":i%d" it)
+                (apply #'vector (number-sequence 1 9)))
           (number-sequence 0 (1- count)))))
 
 (defun day24/simplify-all (input-count instructions)
