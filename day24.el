@@ -171,53 +171,82 @@ SOME INDICES MAY BE MISSING (if they are nil)"
   "Sort the list by putting the largest variable in the front"
   (sort variables-alu-list
         (lambda (a b)
-          (#'> (apply #'max (car a))
-               (apply #'max (car b))))))
+          (> (apply #'max (car a))
+             (apply #'max (car b))))))
 
-(defun day24/evolve-alu (variables-list alu instruction)
+(defun day24/split-alu (alu instruction)
   "Accepts an alu and an instruction and returns a list of evolved ALUs with the relevant indices"
   (day24/debug--assert-alu-ok alu)
-  ;(day24/debug--print (format "Executing   %s" instruction))
+  (day24/debug--print (format "Executing   %s" instruction))
   (let ((op (car instruction))
         (op1 (elt instruction 1)))
-    (if (eq op :inp)
-        ;; Split the ALU, returns a list with all the variables lists updated
-        (let ((new-variables-alus (day24/sort-results (day24/reset alu op1))))
-          (--map (list (cons (car it) variables-list)
-                       alu)
-                 new-variables-alus))
-      ;; Operations that doesn't split the ALU, the variables list are the same
-      (list (list variables-list
-                  (day24/debug--assert-alu-ok
-                   (let ((op2 (elt instruction 2)))
-                     (case op
-                       (:add (day24/add alu op1 op2))
-                       (:mul (day24/mul alu op1 op2))
-                       (:div (day24/div alu op1 op2))
-                       (:mod (day24/mod alu op1 op2))
-                       (:eql (day24/eql alu op1 op2))        
-                       (t (error (format "Unsupported opcode '%s'" car)))))))))))
+    ;; Split the ALU, returns a list with all the variables associated
+    (day24/sort-results (day24/reset alu op1))))
 
-(defun day24/evolve-all (variables-alu instructions)
-  (let ((tree)
-        (variables (car variables-alu))
+(defun day24/evolve-alu (alu instruction)
+  "Accepts an alu and an instruction and returns a new ALU"
+  (day24/debug--assert-alu-ok alu)
+;  (day24/debug--print (format "Executing   %s" instruction))
+  ;; Operations that doesn't split the ALU, the variables list are the same
+  (day24/debug--assert-alu-ok
+   (let ((op (car instruction))
+         (op1 (elt instruction 1))
+         (op2 (elt instruction 2)))
+     (case op
+       (:add (day24/add alu op1 op2))
+       (:mul (day24/mul alu op1 op2))
+       (:div (day24/div alu op1 op2))
+       (:mod (day24/mod alu op1 op2))
+       (:eql (day24/eql alu op1 op2))        
+       (t (error (format "Unsupported opcode '%s'" car)))))))
+
+(defun day24/set-value-indices (vector value)
+  "Return all values associated with a '0' on the variable vector"
+  (let ((indices))
+    (loop for i from 1 upto 9 do
+          (when (= value (aref vector (1- i)))
+            (push i indices)))
+    indices))
+
+;;; TODO/FIXME handle trasversal nil on all variables as a special case?
+(defun day24/evolve-all (previous-variables variables-alu instructions)
+  (let ((variables (car variables-alu))
         (alu (day24/debug--assert-alu-ok (cadr variables-alu))))
-    (if instructions
-      (let ((new-variables-alus (day24/evolve-alu variables alu (pop instructions))))
-        (if (and (= (length new-variables-alus) 1) (not (caar new-variables-alus)))
-            ;; no split, just evolve this one with the remaining instructions
-            (let ((single-evolution (car new-variables-alus)))
-              (day24/evolve-all (list variables (cadr single-evolution)) instructions))
-          ;; split: evolve each one with his own index
-          (list variables (--map (day24/evolve-all it instructions) new-variables-alus))))
-      ;; TODO: return an index in the correct form
-      (progn
-        (day24/debug--print (format "variables: %s" variables))
-        (day24/debug--print (format "LAST ALU: %s" alu))
-        12))))
+    (if (not instructions)
+        ;; nil will mean that there is no valid result
+        (let ((valid-numbers (day24/set-value-indices (plist-get alu :z) 0)))
+          (print (format "Valid numbers: %s" valid-numbers))
+          (print (format "Previous variables: %s" previous-variables))
+          (print (format "Variables: %s" variables))
+          (print (format "Current alu: %s" alu))
+          (redisplay)
+          (when valid-numbers (cons valid-numbers previous-variables)))        
+      (let ((next-instruction (pop instructions)))
+        (if (not (eq (car next-instruction) :inp))
+            ;; just carry on
+            (day24/evolve-all previous-variables
+                              (list variables (day24/evolve-alu alu next-instruction))
+                              instructions)
+          ;; expect a split
+          (let ((branches (day24/split-alu alu next-instruction))
+                (first-result))
+            ;; add the current variables to the list I'm carrying around
+            (when variables
+             (push variables previous-variables))
+            ;; evolve each result, in turn, and return the first that's not nil
+            (while (and branches (not first-result))
+              (let* ((current-branch (pop branches))
+                     (new-variables (car current-branch))
+                     (new-alu (cadr current-branch)))
+                (let ((new-result (day24/evolve-all previous-variables
+                                         (list new-variables new-alu)
+                                         instructions)))
+                  (if new-result (setq first-result new-result)))))
+            first-result))))))
 
 (defun day24/part-1 (lines)
-  (day24/evolve-all (list nil (day24/create-alu))
+  (day24/evolve-all nil
+                    (list nil (day24/create-alu))
                     (day24/read-opcodes lines)))
 
 (defun day24/part-2 (lines)
@@ -229,6 +258,63 @@ SOME INDICES MAY BE MISSING (if they are nil)"
 (setq negate (day24/read-opcodes (list "inp x" "mul x -1")))
 (setq is-trice? (day24/read-opcodes (list "inp z" "inp x" "mul z 3" "eql z x")))
 (setq binary-conversion (day24/read-opcodes (list "inp w" "add z w" "mod z 2" "div w 2" "add y w" "mod y 2" "div w 2" "add x w" "mod x 2" "div w 2" "mod w 2")))
+
+(setq first-batch (day24/read-opcodes (list
+"inp w"
+"mul x 0"
+"add x z"
+"mod x 26"
+"div z 1"
+"add x 14"
+"eql x w"
+"eql x 0"
+"mul y 0"
+"add y 25"
+"mul y x"
+"add y 1"
+"mul z y"
+"mul y 0"
+"add y w"
+"add y 12"
+"mul y x"
+"add z y")))
+(setq second-batch (day24/read-opcodes (list
+"inp w"
+"mul x 0"
+"add x z"
+"mod x 26"
+"div z 1"
+"add x 14"
+"eql x w"
+"eql x 0"
+"mul y 0"
+"add y 25"
+"mul y x"
+"add y 1"
+"mul z y"
+"mul y 0"
+"add y w"
+"add y 12"
+"mul y x"
+"add z y"
+"inp w"
+"mul x 0"
+"add x z"
+"mod x 26"
+"div z 1"
+"add x 11"
+"eql x w"
+"eql x 0"
+"mul y 0"
+"add y 25"
+"mul y x"
+"add y 1"
+"mul z y"
+"mul y 0"
+"add y w"
+"add y 8"
+"mul y x"
+"add z y")))
 
 (setq max-specpdl-size 10000)
 (setq max-lisp-eval-depth 10000)
