@@ -70,11 +70,12 @@
             (aset new-vector i (funcall cell-operation old-value))))
     new-vector))
 
-(defun day24/input--add (input value)
+(defun day24/input--operation (input f)
   (list (car input)
-        (day24/operate--vector (cadr input)
-                               (lambda (x)
-                                 (+ x value)))))
+        (day24/operate--vector (cadr input) f)))
+
+(defun day24/input--add (input value)
+  (day24/input--operation input (lambda (x) (+ x value))))
 
 ;; TODO Maybe you can check for - equality?
 (defun day24/add--a-b (op1 op2)
@@ -95,6 +96,13 @@
 (defun day24/add (alu op1 op2)
   (day24/binary-operation alu #'day24/add--a-b op1 op2))
 
+(defun day24/input--mod (input value)
+  (day24/input--operation input
+                          (lambda (x)
+                            (if (< x 0)
+                                nil
+                              (mod x value)))))
+
 (defun day24/mod--a-b (op1 op2)
   (when (and (numberp op1) (< op1 0))
     (error "Negative mod dividend"))
@@ -108,6 +116,7 @@
     (if (numberp op2)
         (cond
          ((= op2 1) 0)
+         ((day24/is-input? op1) (day24/input--mod op1 op2))
 ;         ((equal op1 op2) 0) ;; there is a corner case where the dividend could be 0, this could result in an error! :(
          ((numberp op1) (mod op1 op2))
          (t (list #'mod op1 op2)))
