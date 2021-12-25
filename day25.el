@@ -60,8 +60,8 @@
 
 (defun day25/set-block! (grid grid-size pos block)
   (let ((block-size (advent/get-grid-size block)))
-    (loop for i from 0 below (car block-size) do
-          (loop for j from 0 below (cdr block-size) do
+    (loop for i from (1- (car block-size)) downto 0  do
+          (loop for j from (1- (cdr block-size)) downto 0 do
                 (let ((block-value (advent/grid-get block (cons i j))))
                   (advent/grid-set! grid
                                     (day25/convert-coordinates grid-size
@@ -79,19 +79,51 @@
     new-grid))
 
 (defun day25/horizontal-f (sample)
-  (if (equal sample [[:> nil]])
+    (if (equal sample [[:> nil]])
       (vector (vector nil :>))
-    sample))
+    sample)
+)
 
 (defun day25/vertical-f (sample)
-  (if (equal sample [[:v] [nil]])
+    (if (equal sample [[:v] [nil]])
       (vector (vector nil) (vector :v))
-    sample))
+    sample)
+  sample
+)
 
 (defun day25/evolve (grid)
   (let ((transformed (day25/transform grid #'day25/horizontal-f '(1 . 2))))
     (day25/debug--print transformed)
-   (day25/transform transformed #'day25/vertical-f '(2 . 1))))
+    (day25/transform transformed #'day25/vertical-f '(2 . 1))))
+
+(defun day25/read-column (grid column rows)
+  (let ((new-column (make-vector rows nil)))
+    (loop for i from 0 below rows do
+          (aset new-column i (aref (aref grid i) column)))
+    new-column))
+
+(defun day25/write-column! (grid column vector rows)
+  (loop for i from 0 below rows do
+        (aset (aref grid i) column (aref vector i))))
+
+(defun day25/evolve-column (vector rows)
+  ;; TODO/FIXME algorithm
+  )
+
+(defun day25/evolve-row! (vector columns)
+  ;; TODO/FIXME algorithm
+  )
+
+(defun day25/evolve (grid)
+    (let* ((grid-size (advent/get-grid-size grid))
+           (new-grid (advent/copy-grid grid)))
+      (loop for row from 0 below (car grid-size) do
+            (day25/evolve-row! (aref new-grid row) (cdr grid-size)))
+      (loop for column from 0 below (cdr grid-size) do
+            (let ((column-vector (day25/read-column new-grid column (car grid-size))))
+              (day25/evolve-column column-vector (car grid-size))
+              (day25/write-column! new-grid column column-vector (car grid-size))))
+      new-grid))
 
 (defun day25/part-1 (lines)
   (error "Not yet implemented"))
