@@ -166,6 +166,17 @@ The value is binded to 'it'"
   (declare (indent 1))
   `(advent/update-grid! ,grid (lambda (it) ,@forms)))
 
+(defun advent/each-grid (grid f)
+  (loop for i below (length grid) do
+        (loop for j below (length (aref grid 0)) do
+              (let ((coord (cons i j)))
+                (funcall f coord (advent/grid-get grid coord ))))))
+
+(defmacro advent/-each-grid (grid &rest forms)
+  (declare (indent 1))
+  `(advent/each-grid ,grid (lambda (it-coord it-value)
+                             ,@forms)))
+
 (defun advent/grid-set! (grid row-column value)
   (aset (aref grid (car row-column)) (cdr row-column) value))
 
