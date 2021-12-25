@@ -167,18 +167,27 @@ SOME INDICES MAY BE MISSING (if they are nil)"
     (print value)
     (redisplay)))
 
-(defun day24/evolve-alu (alu instruction)
+(defun day24/sort-results (variables-alu-list)
+  "Sort the list by putting the largest variable in the front"
+  (sort variables-alu-list
+        (lambda (a b)
+          (#'> (apply #'max (car a))
+               (apply #'max (car b))))))
+
+(defun day24/evolve-alu (variables-list alu instruction)
   "Accepts an alu and an instruction and returns a list of evolved ALUs with the relevant indices"
   (day24/debug--assert-alu-ok alu)
-  (day24/debug--print (format "Executing   %s" instruction))
+  ;(day24/debug--print (format "Executing   %s" instruction))
   (let ((op (car instruction))
         (op1 (elt instruction 1)))
     (if (eq op :inp)
-        ;; Split the ALU
-        (progn
-          (day24/reset alu op1))
-      ;; Operations that doesn't split the ALU, the variables are the same ('nil')
-      (list (list nil
+        ;; Split the ALU, returns a list with all the variables lists updated
+        (let ((new-variables-alus (day24/sort-results (day24/reset alu op1))))
+          (--map (list (cons (car it) variables-list)
+                       alu)
+                 new-variables-alus))
+      ;; Operations that doesn't split the ALU, the variables list are the same
+      (list (list variables-list
                   (day24/debug--assert-alu-ok
                    (let ((op2 (elt instruction 2)))
                      (case op
@@ -194,7 +203,7 @@ SOME INDICES MAY BE MISSING (if they are nil)"
         (variables (car variables-alu))
         (alu (day24/debug--assert-alu-ok (cadr variables-alu))))
     (if instructions
-      (let ((new-variables-alus (day24/evolve-alu alu (pop instructions))))
+      (let ((new-variables-alus (day24/evolve-alu variables alu (pop instructions))))
         (if (and (= (length new-variables-alus) 1) (not (caar new-variables-alus)))
             ;; no split, just evolve this one with the remaining instructions
             (let ((single-evolution (car new-variables-alus)))
@@ -202,7 +211,10 @@ SOME INDICES MAY BE MISSING (if they are nil)"
           ;; split: evolve each one with his own index
           (list variables (--map (day24/evolve-all it instructions) new-variables-alus))))
       ;; TODO: return an index in the correct form
-      (format "LAST ALU: %s" alu))))
+      (progn
+        (day24/debug--print (format "variables: %s" variables))
+        (day24/debug--print (format "LAST ALU: %s" alu))
+        12))))
 
 (defun day24/part-1 (lines)
   (day24/evolve-all (list nil (day24/create-alu))
