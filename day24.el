@@ -115,14 +115,25 @@
 (defun day24/div (alu op1 op2)
   (day24/binary-operation alu #'day24/div--a-b op1 op2))
 
+(defun day24/illegal-input-value? (op)
+  "True if op is a number but it's outside [1,9]"
+  (and (numberp op)
+       (not (and (> op 0)
+                 (< op 10)))))
+
 (defun day24/eql--a-b (op1 op2)
   (if (and (numberp op1) (numberp op2))
+      ;; both are number
       (if (= op1 op2) 1 0)
-    (if (equal op1 op2)
-        ;; same expression. Must be equal
-        1
-      ;; different expression. Could be equal
-      (list #'equal op1 op2))))
+    (if (or (and (day24/illegal-input-value? op1) (day24/is-input? op2))
+            (and (day24/illegal-input-value? op2) (day24/is-input? op1)))
+        ;; an input value can't be like that!
+        0
+      (if (equal op1 op2)
+          ;; same expression. Must be equal
+          1
+        ;; different expression. Could be equal
+        (list #'equal op1 op2)))))
 
 (defun day24/eql (alu op1 op2)
   (day24/binary-operation alu #'day24/eql--a-b op1 op2))
@@ -153,9 +164,14 @@
                     (elt instruction 2))
            inputs))))
 
+(defun day24/is-input? (value)
+  (and (not (numberp value))
+       (symbolp value)
+       (s-starts-with? ":i" (symbol-name value))))
+
 (defun day24/create-inputs (count)
   (nreverse
-   (--map (make-symbol (format "i%d" it))
+   (--map (intern (format ":i%d" it))
           (number-sequence 0 (1- count)))))
 
 (defun day24/simplify-all (input-count instructions)
