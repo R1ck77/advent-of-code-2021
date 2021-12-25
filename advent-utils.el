@@ -5,6 +5,9 @@
   "Important (and missed…) enough to warrant a global-like name"
   nil)
 
+(defun advent/v->l (vector)
+  (append vector '()))
+
 (defun advent/table ()
   (make-hash-table :test #'equal))
 

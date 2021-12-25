@@ -45,17 +45,22 @@
   (and (listp value)
        (stringp (car value))))
 
+(defun day24/input--mul (input value)
+  (day24/input--operation input (lambda (x) (* x value))))
+
 (defun day24/mul--a-b (op1 op2)
   (if (numberp op1)
       (cond
        ((zerop op1) 0)
        ((= op1 1) op2)
        ((numberp op2) (* op1 op2))
+       ((day24/is-input? op2) (day24/input--mul op2 op1))       
        (t (list #'* op1 op2)))
     (if (numberp op2)
         (cond
          ((zerop op2) 0)
          ((= op2 1) op1)
+         ((day24/is-input? op1) (day24/input--mul op1 op2))                
          (t (list #'* op2 op1)))
       (list #'* op2 op1))))
 
@@ -150,19 +155,31 @@
        (not (and (> op 0)
                  (< op 10)))))
 
+(defun day24/input--eql-inputs (op1 op2)
+  (let ((v1 (cadr op1))
+        (v2 (cadr op2)))
+    (let ((set (advent/table)))
+      (--each (advent/v->l v1)
+        (advent/put set it t))
+      (if (not (--filter (advent/get set it) (advent/v->l v2 )))
+          0
+        (list #'equal op1 op2)))))
+
 (defun day24/eql--a-b (op1 op2)
   (if (and (numberp op1) (numberp op2))
       ;; both are number
       (if (= op1 op2) 1 0)
-    (if (or (and (day24/illegal-input-value? op1) (day24/is-input? op2))
-            (and (day24/illegal-input-value? op2) (day24/is-input? op1)))
-        ;; an input value can't be like that!
-        0
-      (if (equal op1 op2)
-          ;; same expression. Must be equal
-          1
-        ;; different expression. Could be equal
-        (list #'equal op1 op2)))))
+    (if (and (day24/is-input? op1) (day24/is-input? op2))
+        (day24/input--eql-inputs op1 op2)
+     (if (or (and (day24/illegal-input-value? op1) (day24/is-input? op2))
+             (and (day24/illegal-input-value? op2) (day24/is-input? op1)))
+         ;; an input value can't be like that!
+         0
+       (if (equal op1 op2)
+           ;; same expression. Must be equal
+           1
+         ;; different expression. Could be equal
+         (list #'equal op1 op2))))))
 
 (defun day24/eql (alu op1 op2)
   (day24/binary-operation alu #'day24/eql--a-b op1 op2))
