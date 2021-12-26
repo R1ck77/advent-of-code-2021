@@ -122,6 +122,45 @@
                  (day24/create-state)
                  (reverse instructions)))
 
+(defun day24/update-instructions (state f)
+  (let ((new-state (day24/copy-state state))
+        (new-expressions))
+    (maphash (lambda (symbol expression))
+             (plist-get state :expressions))
+    (plist-put new-state :expressions )))
+
+(defun day24/update-selection (f state-sel)
+  (let ((state (car state-sel))
+        (selection (cadr state-sel)))
+    (let* ((new-state (day24/copy-state state))
+           (new-expressions (plist-get new-state :expressions)))
+      (--each selection
+        (let ((result (apply f selection)))
+          (if result
+              (advent/put new-expressions (car result) (cadr result)))))
+      new-state)))
+
+(defun day24/select-expr (pred state)
+  (list 
+   state
+   (let ((selected))
+    (maphash (lambda (symbol value)
+               (if (funcall pred symbol value)
+                   (push (list symbol value) selected)))
+             (plist-get state :expressions))
+    selected)))
+
+(defun day24/resolve-zeroes (state)
+  "Returns a new state where all operations with a 0 src are resolved"
+  (day24/update-selection (lambda (symbol value)
+                            (case (car value)
+                              (:mul (list symbol 0))
+                              (:add (list symbol (cadr-value)))
+                              (t (error (format "Unexpected zero operation for %s" value)))))
+                          (day24/select-expr (lambda (symbol value)
+                                               (and (numberp (elt value 2)) (zerop (elt value 2))))
+                                             state)))
+
 (defun day24/part-1 (lines)
   (error "Not yet implemented"))
 
