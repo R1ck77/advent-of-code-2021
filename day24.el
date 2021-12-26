@@ -154,20 +154,16 @@
 (defun day24/add (alu op1 op2)
   (day24/binary-operation alu #'day24/add--a-b op1 op2))
 
-(defun day24/safe-mod (a b)
-  (unless (or (< a 0) (<= b 0))
-    (mod a b)))
-
 (defun day24/input--mod (input value)
   (lexical-let ((value value))
     (day24/input--operation input
                             (lambda (x)
-                              (day24/safe-mod x value)))))
+                              (mod x value)))))
 
 (defun day24/mod--a-b (op1 op2)    
   (assert (numberp op2))
   (cond
-   ((numberp op1) (day24/safe-mod op1 op2))
+   ((numberp op1) (mod op1 op2))
    ((day24/is-input? op1) (day24/input--mod op1 op2))
    (t (error (format "Unhandled: mod %s %s" op1 op2)))))
 
@@ -176,12 +172,10 @@
 
 (defun day24/input--div (input value)
   (lexical-let ((value value))
-    (day24/input--operation input (lambda (x) (if (not (zerop value))
-                                                  (/ x value))))))
+    (day24/input--operation input (lambda (x) (truncate (/ x value))))))
 
 (defun day24/safe-division-2 (x y)
-  (unless (zerop y)
-    (truncate (/ x y))))
+  (truncate (/ x y)))
 
 (defun day24/input--div-inputs (op1 op2)
   (day24/input--binary-operation op1 op2 #'day24/safe-division-2))
