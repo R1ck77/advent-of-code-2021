@@ -2,6 +2,8 @@
 (require 's)
 (require 'advent-utils)
 
+(setq lexical-binding t)
+
 (defconst day24/registers '(:w :x :y :z) "All ALU's registers")
 
 (defun day24/tokenize (string)
@@ -43,10 +45,11 @@
 
 (defun day24/is-input? (value)
   (and (listp value)
-       (stringp (car value))))
+       (plist-get value :name)))
 
 (defun day24/input--mul (input value)
-  (day24/input--operation input (lambda (x) (* x value))))
+  (lexical-let ((value value))
+    (day24/input--operation input (lambda (x) (* x value)))))
 
 (defun day24/mul--a-b (op1 op2)
   (if (numberp op1)
@@ -84,10 +87,11 @@
       new-list)))
 
 (defun day24/reduce-input (input)
-  (let ((new-values (day24/reduce-values (cadr input))))
+  (let ((new-values (day24/reduce-values (plist-get input :value))))
     (if (= (length new-values) 2)
         (car new-values)
-      (list (car input) new-values))))
+      (list :name (plist-get input :name)
+            :value new-values))))
 
 (defun day24/operate--vector (values cell-operation)
   "Returns a new vector"
@@ -100,13 +104,14 @@
                  (-partition 2 values)))
 
 (defun day24/input--operation (input f)
-  (day24/reduce-input (list (car input)
-                            (day24/operate--vector (cadr input) f))))
+  (lexical-let ((f f))
+   (day24/reduce-input (list :name (plist-get input :name)
+                             :value (day24/operate--vector (plist-get input :value) f)))))
 
 (defun day24/input--add (input value)
-  (day24/input--operation input (lambda (x) (+ x value))))
+  (lexical-let ((value value))
+    (day24/input--operation input (lambda (x) (+ x value)))))
 
-;; TODO Maybe you can check for - equality?
 (defun day24/add--a-b (op1 op2)
   (if (numberp op1)
         (cond
@@ -126,11 +131,12 @@
   (day24/binary-operation alu #'day24/add--a-b op1 op2))
 
 (defun day24/input--mod (input value)
-  (day24/input--operation input
-                          (lambda (x)
-                            (if (< x 0)
-                                nil
-                              (mod x value)))))
+  (lexical-let ((value value))
+    (day24/input--operation input
+                            (lambda (x)
+                              (if (< x 0)
+                                  nil
+                                (mod x value))))))
 
 (defun day24/mod--a-b (op1 op2)
   (when (and (numberp op1) (< op1 0))
@@ -146,7 +152,6 @@
         (cond
          ((= op2 1) 0)
          ((day24/is-input? op1) (day24/input--mod op1 op2))
-;         ((equal op1 op2) 0) ;; there is a corner case where the dividend could be 0, this could result in an error! :(
          ((numberp op1) (mod op1 op2))
          (t (list #'mod op1 op2)))
       (list #'mod op1 op2))))
@@ -165,7 +170,6 @@
     (if (numberp op2)
         (cond
          ((= op2 1) op1)
-;         ((equal op1 op2) 1) ;; there is a corner case where the dividend could be 0, this could result in an error :(
          ((numberp op1) (truncate (/ op1 op2)))
          (t (list #'truncate (list #'/ op1 op2))))
       (list #'truncate (list #'/ op1 op2)))))
@@ -179,16 +183,68 @@
        (not (and (> op 0)
                  (< op 10)))))
 
+(defun day24/unroll--value (value)
+  "Split a value in a repeated list of (value [index])"
+  (--reduce-from (let ((value (car it))
+                       (indices (cadr it)))
+                   (append acc (-reduce-from (lambda (pairs pair)
+                                    (cons pair pairs))                                 
+                                  ()
+                                  (-map (lambda (index)
+                                          (list value index))
+                                        indices)))
+                   )
+                 '()
+                 (-partition 2 value)))
+
+(defun day24/roll--value (pairs)
+  (let ((merged (advent/table)))
+    (--each pairs
+      (let ((value (car it))
+            (index (cadr it)))
+        (advent/put merged value (cons index (advent/get merged value)))))
+    (let ((result))
+      (maphash (lambda (value indices)
+                 (setq result (append result (list value indices))))
+               merged)
+      result)))
+
+(defun day24/any--conflicting-indices? (idx1 idx2)
+  (--any (and
+          ;; both indices for the variable are present
+          (car it) (cdr it)
+          ;;; but they are not the same
+          (/= (car it) (cdr it)))
+         (-zip (advent/v->l idx1) (advent/v->l idx2))))
+
+(defun day24/merge--indices (idx1 idx2)
+  (apply #'vector
+         (--map (or (car it) (cdr it))
+                (-zip (advent/v->l idx1) (advent/v->l idx2)))))
+
+(defun day24/input--binary-operation (op1 op2 f)
+  (let ((values1 (day24/unroll--value (plist-get op1 :value)))
+        (values2 (day24/unroll--value (plist-get op2 :value)))
+        (results))
+    (loop for i in values1 do
+          (let ((v1 (car i))
+                (i1 (cadr i)))
+            (loop for j in values2 do
+                  (let ((v2 (car j))
+                        (i2 (cadr j)))
+                    (unless (day24/any--conflicting-indices? i1 i2)
+                      (let ((new-index (day24/merge--indices i1 i2))
+                            (new-value (funcall f v1 v2)))
+                        (push (list new-value new-index) results)))))))
+    (list :name (concat (plist-get op1 :name)
+                        ":"
+                        (plist-get op2 :name))
+          :value (day24/roll--value results))))
+
 ;; TODO/FIXME wrong
+;; This is probably the simplest binary operation
 (defun day24/input--eql-inputs (op1 op2)
-  (let ((v1 (cadr op1))
-        (v2 (cadr op2)))
-    (let ((set (advent/table)))
-      (--each (advent/v->l v1)
-        (advent/put set it t))
-      (if (not (--filter (advent/get set it) (advent/v->l v2 )))
-          0
-        (list #'equal op1 op2)))))
+  (day24/input--binary-operation op1 op2 (lambda (a b) (if (= a b) 1 0))))
 
 (defun day24/eql--a-b (op1 op2)
   (if (and (numberp op1) (numberp op2))
@@ -235,13 +291,20 @@
                     (elt instruction 2))
            inputs))))
 
-(defun day24/starting-input-data ()
-  (--reduce-from (append acc (list it (list it))) '() (number-sequence 1 9)))
+(defun day24/create-i2v (count var-index start-value)
+  (let ((indices (make-vector count nil)))
+    (aset indices var-index it)
+    indices))
+
+(defun day24/starting-input-data (count var-index)
+  (--reduce-from (append acc (list it (list (day24/create-i2v count var-index it))))
+                 '()
+                 (number-sequence 1 9)))
 
 (defun day24/create-inputs (count)
   (nreverse
-   (--map (list (format ":i%d" it)
-                (day24/starting-input-data))
+   (--map (list :name (format ":i%d" it)
+                :value (day24/starting-input-data count it))
           (number-sequence 0 (1- count)))))
 
 (defun day24/simplify-all (input-count instructions)
@@ -251,15 +314,27 @@
                               (day24/create-inputs input-count))
                         instructions)))
     ;; I expect all inputs to be consumed
-    (plist-get (car alu-inputs) :z)))
+    (car alu-inputs)))
+
+(defun day24/simplify-all-z (input-count instructions)
+  (plist-get (day24/simplify-all input-count instructions) :z))
 
 (defun day24/part-1 (lines)
-  (day24/simplify-all 14 (day24/read-opcodes lines)))
+  (day24/simplify-all-z 14 (day24/read-opcodes lines)))
 
 (defun day24/part-2 (lines)
   (error "Not yet implemented"))
 
 (provide 'day24)
 
+(defun read-programX (text)
+  (day24/read-opcodes (split-string text "\n" t)))
+
 (setq example (day24/read-opcodes (advent/read-problem-lines 24 :problem)))
+(setq negate (read-programX "inp x
+mul x -1"))
+(setq triple (read-programX "inp z
+inp x
+mul z 3
+eql z x"))
 
