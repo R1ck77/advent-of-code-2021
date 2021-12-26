@@ -82,10 +82,12 @@
   (> (day24/index-to-magnitude a)
      (day24/index-to-magnitude b)))
 
+(setq day24/debug-keep-copies nil)
+
 (defun day24/merge-indices (list1 list2)
-  ;;(-uniq (append list1 list2))
-  (list (car (sort (-uniq (append list1 list2)) #'day24/compare-indices)))
-  )
+  (if day24/debug-keep-copies
+      (-uniq (append list1 list2))
+    (list (car (sort (-uniq (append list1 list2)) #'day24/compare-indices)))))
 
 (defun day24/reduce-values (values)
   "merge the indices together"
