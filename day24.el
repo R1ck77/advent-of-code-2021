@@ -71,8 +71,21 @@
 (defun day24/mul (alu op1 op2)
   (day24/binary-operation alu #'day24/mul--a-b op1 op2))
 
+(defun day24/index-to-magnitude (index)
+  (car
+   (--reduce-from (cons (+ (car acc) (if it (* it (cdr acc)) 0))                  
+                        (* (cdr acc) 8))
+                  '(0 . 1)
+                  (advent/v->l index))))
+
+(defun day24/compare-indices (a b)
+  (> (day24/index-to-magnitude a)
+     (day24/index-to-magnitude b)))
+
 (defun day24/merge-indices (list1 list2)
-  (-uniq (append list1 list2)))
+  ;;(-uniq (append list1 list2))
+  (list (car (sort (-uniq (append list1 list2)) #'day24/compare-indices)))
+  )
 
 (defun day24/reduce-values (values)
   "merge the indices together"
