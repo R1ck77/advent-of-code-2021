@@ -40,6 +40,11 @@
   (day24/build-symbol register
                       (plist-get (plist-get state :indices) register)))
 
+;; TODO/FIXME duplicated code
+(defun day24/next-symbol (state register)
+  (day24/build-symbol register
+                       (1+ (plist-get (plist-get state :indices) register))))
+
 (defun day24/increase-index (state register)
   (let* ((indices (plist-get state :indices))
          (old-index (plist-get indices register)))
@@ -77,7 +82,20 @@
     new-state))
 
 (defun day24/add-binary (state op dst src)
-  "Returns a new state with the information added")
+  "Returns a new state with the information added"
+  (assert (not (numberp dst)))
+  (let ((current-dst (day24/current-symbol state dst))
+        (next-dst (day24/next-symbol state dst))
+        (next-state (day24/increase-index state dst)))
+    (cond
+     ;; op
+     ((numberp src)
+      (day24/add-symbol next-state current-dst (list op next-dst src)))
+     ;; symbol
+     ((plist-get day24/registers-base src)
+      (day24/add-symbol next-state current-dst (list op next-dst (day24/current-symbol next-state src))))
+     ;; tertio non datur
+     (t (error (format "Unexpected src: %s" src))))))
 
 (defun day24/add-inp (state dst)
   "Returns a new state with the information set"
@@ -95,8 +113,14 @@
         (day24/add-inp state
                        (elt instruction 1))
       (day24/add-binary state
+                        op
                         (elt instruction 1)
                         (elt instruction 2)))))
+
+(defun day24/record-program (instructions)
+  (--reduce-from (day24/add-instruction acc it)
+                 (day24/create-state)
+                 (reverse instructions)))
 
 (defun day24/part-1 (lines)
   (error "Not yet implemented"))
