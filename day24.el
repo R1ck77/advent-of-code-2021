@@ -54,7 +54,6 @@
 (defun day24/input--mul-inputs (op1 op2)
   (day24/input--binary-operation op1 op2 #'*))
 
-
 (defun day24/mul--a-b (op1 op2)
   (if (and (day24/is-input? op1)
            (day24/is-input? op2))
@@ -106,8 +105,9 @@
   (--reduce-from (append acc
                          (let ((value (car it))
                                (indices (cadr it)))
-                           (list (funcall cell-operation value)
-                                 indices)))
+                           (if-let (new-value (funcall cell-operation value))
+                               (list new-value
+                                     indices))))
                  ()
                  (-partition 2 values)))
 
@@ -152,22 +152,18 @@
                                 (mod x value))))))
 
 (defun day24/mod--a-b (op1 op2)
-  (when (and (numberp op1) (< op1 0))
-    (error "Negative mod dividend"))
-  (when (and (numberp op2) (<= op2 0))
-    (error "Invalid mod divisor"))
-  (if (numberp op1)
-      (cond
-       ((zerop op1) 0)
-       ((numberp op2) (mod op1 op2))
-       (t (list #'mod op1 op2)))
-    (if (numberp op2)
+  (assert (numberp op2))
+  (when (and (not (and (numberp op1) (< op1 0)))
+             (> op2 0))
+    (if (numberp op1)
         (cond
-         ((= op2 1) 0)
-         ((day24/is-input? op1) (day24/input--mod op1 op2))
-         ((numberp op1) (mod op1 op2))
+         ((zerop op1) 0)
+         ((numberp op2) (mod op1 op2))
          (t (list #'mod op1 op2)))
-      (list #'mod op1 op2))))
+      (cond
+       ((= op2 1) 0)
+       ((day24/is-input? op1) (day24/input--mod op1 op2))
+       (t (list #'mod op1 op2))))))
 
 (defun day24/mod (alu op1 op2)
   (day24/binary-operation alu #'day24/mod--a-b op1 op2)  )
@@ -185,22 +181,22 @@
   (day24/input--binary-operation op1 op2 #'day24/safe-division-2))
 
 (defun day24/div--a-b (op1 op2)
-  (when (and (numberp op2) (= op2 0))
-    nil)
-  (if (and (day24/is-input? op1) (day24/is-input? op2))
-      (day24/input--div-inputs op1 op2)
-   (if (numberp op1)
-       (cond
-        ((zerop op1) 0)
-        ((numberp op2) (truncate (/ op1 op2)))
-        (t (list #'truncate (list #'/ op1 op2))))
-     (if (numberp op2)
-         (cond
-          ((= op2 1) op1)
-          ((numberp op1) (truncate (/ op1 op2)))
-          ((day24/is-input? op1) (day24/input--div op1 op2))
-          (t (list #'truncate (list #'/ op1 op2))))
-       (list #'truncate (list #'/ op1 op2))))))
+  (assert (numberp op2))
+  (unless (= op2 0)
+    (if (and (day24/is-input? op1) (day24/is-input? op2))
+        (progn
+          (error "This shouldn't happen!")
+         (day24/input--div-inputs op1 op2))
+      (if (numberp op1)
+          (cond
+           ((zerop op1) 0)
+           ((numberp op2) (truncate (/ op1 op2)))
+           (t (list #'truncate (list #'/ op1 op2))))
+        (cond
+         ((= op2 1) op1)
+         ((numberp op1) (truncate (/ op1 op2)))
+         ((day24/is-input? op1) (day24/input--div op1 op2))
+         (t (list #'truncate (list #'/ op1 op2))))))))
 
 (defun day24/div (alu op1 op2)
   (day24/binary-operation alu #'day24/div--a-b op1 op2))
