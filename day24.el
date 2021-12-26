@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t -*-
 (require 'dash)
 (require 's)
 (require 'advent-utils)
@@ -326,7 +327,7 @@
 
 (defun day24/create-i2v (count var-index start-value)
   (let ((indices (make-vector count nil)))
-    (aset indices var-index it)
+    (aset indices var-index start-value)
     indices))
 
 (defun day24/starting-input-data (count var-index)
