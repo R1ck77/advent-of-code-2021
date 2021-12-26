@@ -55,23 +55,18 @@
   (day24/input--binary-operation op1 op2 #'*))
 
 (defun day24/mul--a-b (op1 op2)
-  (if (and (day24/is-input? op1)
-           (day24/is-input? op2))
-      (day24/input--mul-inputs op1 op2)
-    (if (numberp op1)
-        (cond
-         ((zerop op1) 0)
-         ((= op1 1) op2)
-         ((numberp op2) (* op1 op2))
-         ((day24/is-input? op2) (day24/input--mul op2 op1))       
-         (t (error (format "Unresolved operation: * %s %s" op1 op2))))
-      (if (numberp op2)
-          (cond
-           ((zerop op2) 0)
-           ((= op2 1) op1)
-           ((day24/is-input? op1) (day24/input--mul op1 op2))                
-           (t (error (format "Unresolved operation: * %s %s" op1 op2))))
-        (error (format "Unresolved operation: * %s %s" op1 op2))))))
+  (cond
+   ((and (day24/is-input? op1) (day24/is-input? op2))
+    (day24/input--mul-inputs op1 op2))
+   ((and (numberp op1) (numberp op2)) (* op1 op2))
+   ((and (day24/is-input? op1) (numberp op2))
+    (cond
+     ((zerop op2) 0) ; null element
+     ((= 1 op2) op1) ;identity element
+     (t (day24/input--mul op1 op2))))
+   ((and (day24/is-input? op2) (numberp op1))
+    (day24/mul--a-b op2 op1))
+   (t (error "Unresolved operation: * %s %s" op1 op2))))
 
 (defun day24/mul (alu op1 op2)
   (day24/binary-operation alu #'day24/mul--a-b op1 op2))
@@ -85,7 +80,8 @@
     (--each (-partition 2 values)
       (let ((value (car it))
             (indices (cadr it)))
-        (advent/put set value (day24/merge-indices indices (advent/get set value '())))))
+        (when value
+         (advent/put set value (day24/merge-indices indices (advent/get set value '()))))))
     (let ((new-list))
       (maphash (lambda (value indices)
                  (setq new-list (append new-list (list value indices))))
@@ -112,9 +108,11 @@
                  (-partition 2 values)))
 
 (defun day24/input--operation (input f)
-  (lexical-let ((f f))
-   (day24/reduce-input (list :name (plist-get input :name)
-                             :value (day24/operate--vector (plist-get input :value) f)))))
+  (print (format "1-op %d" (length (plist-get input :value))))
+  (day24/debug-output-size
+   (lexical-let ((f f))
+     (day24/reduce-input (list :name (plist-get input :name)
+                               :value (day24/operate--vector (plist-get input :value) f))))))
 
 (defun day24/input--add (input value)
   (lexical-let ((value value))
@@ -125,45 +123,38 @@
 
 
 (defun day24/add--a-b (op1 op2)
-  (if (and (day24/is-input? op1) (day24/is-input? op2))
-      (day24/input--add-inputs op1 op2)
-    (if (numberp op1)
-        (cond
-         ((zerop op1) op2)
-         ((numberp op2) (+ op1 op2))
-         ((day24/is-input? op2) (day24/input--add op2 op1))
-         (t (list #'+ op1 op2)))
-      (if (numberp op2)
-          (cond
-           ((zerop op2) op1)
-           ((day24/is-input? op1) (day24/input--add op1 op2))
-           (t (list #'+ op2 op1)))
-        (list #'+ op2 op1)))))
+  (cond
+   ((and (numberp op1) (numberp op2))
+    (+ op1 op2))
+   ((and (day24/is-input? op1) (day24/is-input? op2))
+    (day24/input--add-inputs op1 op2))
+   ((and (day24/is-input? op1) (numberp op2))
+    (if (zerop op2)
+        op1
+      (day24/input--add op1 op2)))
+   ((and (day24/is-input? op2) (numberp op1))
+    (day24/add--a-b op2 op1))
+   (t (error (format "Unhandled: eql %s %s" op1 op2)))))
 
 (defun day24/add (alu op1 op2)
   (day24/binary-operation alu #'day24/add--a-b op1 op2))
+
+(defun day24/safe-mod (a b)
+  (unless (or (< a 0) (<= b 0))
+    (mod a b)))
 
 (defun day24/input--mod (input value)
   (lexical-let ((value value))
     (day24/input--operation input
                             (lambda (x)
-                              (if (< x 0)
-                                  nil
-                                (mod x value))))))
+                              (day24/safe-mod x value)))))
 
-(defun day24/mod--a-b (op1 op2)
+(defun day24/mod--a-b (op1 op2)    
   (assert (numberp op2))
-  (when (and (not (and (numberp op1) (< op1 0)))
-             (> op2 0))
-    (if (numberp op1)
-        (cond
-         ((zerop op1) 0)
-         ((numberp op2) (mod op1 op2))
-         (t (list #'mod op1 op2)))
-      (cond
-       ((= op2 1) 0)
-       ((day24/is-input? op1) (day24/input--mod op1 op2))
-       (t (list #'mod op1 op2))))))
+  (cond
+   ((numberp op1) (day24/safe-mod op1 op2))
+   ((day24/is-input? op1) (day24/input--mod op1 op2))
+   (t (error (format "Unhandled: mod %s %s" op1 op2)))))
 
 (defun day24/mod (alu op1 op2)
   (day24/binary-operation alu #'day24/mod--a-b op1 op2)  )
@@ -182,21 +173,21 @@
 
 (defun day24/div--a-b (op1 op2)
   (assert (numberp op2))
-  (unless (= op2 0)
-    (if (and (day24/is-input? op1) (day24/is-input? op2))
-        (progn
-          (error "This shouldn't happen!")
-         (day24/input--div-inputs op1 op2))
-      (if (numberp op1)
-          (cond
-           ((zerop op1) 0)
-           ((numberp op2) (truncate (/ op1 op2)))
-           (t (list #'truncate (list #'/ op1 op2))))
+  (assert (not (zerop op2)))
+  (if (and (day24/is-input? op1) (day24/is-input? op2))
+      (progn
+        (error "This shouldn't happen!")
+        (day24/input--div-inputs op1 op2))
+    (if (numberp op1)
         (cond
-         ((= op2 1) op1)
-         ((numberp op1) (truncate (/ op1 op2)))
-         ((day24/is-input? op1) (day24/input--div op1 op2))
-         (t (list #'truncate (list #'/ op1 op2))))))))
+         ((zerop op1) 0)
+         ((numberp op2) (truncate (/ op1 op2)))
+         (t (list #'truncate (list #'/ op1 op2))))
+      (cond
+       ((= op2 1) op1)
+       ((numberp op1) (truncate (/ op1 op2)))
+       ((day24/is-input? op1) (day24/input--div op1 op2))
+       (t (list #'truncate (list #'/ op1 op2)))))))
 
 (defun day24/div (alu op1 op2)
   (day24/binary-operation alu #'day24/div--a-b op1 op2))
@@ -212,11 +203,11 @@
   (--reduce-from (let ((value (car it))
                        (indices (cadr it)))
                    (append acc (-reduce-from (lambda (pairs pair)
-                                    (cons pair pairs))                                 
-                                  ()
-                                  (-map (lambda (index)
-                                          (list value index))
-                                        indices)))
+                                               (cons pair pairs))                                 
+                                             ()
+                                             (-map (lambda (index)
+                                                     (list value index))
+                                                   indices)))
                    )
                  '()
                  (-partition 2 value)))
@@ -246,26 +237,38 @@
          (--map (or (car it) (cdr it))
                 (-zip (advent/v->l idx1) (advent/v->l idx2)))))
 
+(defun day24/debug-output-size (op)
+  (if (numberp op)
+      (print (format "Got a number (%d)" op))
+    (print (format "Got %d distinct values" (length (plist-get op :value)))))
+  (redisplay)
+  op)
+
 (defun day24/input--binary-operation (op1 op2 f)
-  (let ((values1 (day24/unroll--value (plist-get op1 :value)))
-        (values2 (day24/unroll--value (plist-get op2 :value)))
-        (results))
-    (loop for i in values1 do
-          (let ((v1 (car i))
-                (i1 (cadr i)))
-            (loop for j in values2 do
-                  (let ((v2 (car j))
-                        (i2 (cadr j)))
-                    (unless (day24/any--conflicting-indices? i1 i2)
-                      (let ((new-index (day24/merge--indices i1 i2))
-                            (new-value (funcall f v1 v2)))
-                        (if new-value ; discard nil values!
-                            (push (list new-value new-index) results))))))))
-    (day24/reduce-input
-     (list :name (s-truncate 10 (concat (plist-get op1 :name)
-                          ":"
-                          (plist-get op2 :name)) "…")
-           :value (day24/roll--value results)))))
+  (print (format "2-op %d vs %d "
+                 (length (plist-get op1 :value))
+                 (length (plist-get op2 :value))))
+  (redisplay)
+  (day24/debug-output-size
+   (let ((values1 (day24/unroll--value (plist-get op1 :value)))
+         (values2 (day24/unroll--value (plist-get op2 :value)))
+         (results))
+     (loop for i in values1 do
+           (let ((v1 (car i))
+                 (i1 (cadr i)))
+             (loop for j in values2 do
+                   (let ((v2 (car j))
+                         (i2 (cadr j)))
+                     (unless (day24/any--conflicting-indices? i1 i2)
+                       (let ((new-index (day24/merge--indices i1 i2))
+                             (new-value (funcall f v1 v2)))
+                         (if new-value  ; discard nil values!
+                             (push (list new-value new-index) results))))))))
+     (day24/reduce-input
+      (list :name (s-truncate 10 (concat (plist-get op1 :name)
+                                         ":"
+                                         (plist-get op2 :name)) "…")
+            :value (day24/roll--value results))))))
 
 (defun day24/input--eql (input value)
   (lexical-let ((value value))
