@@ -269,7 +269,7 @@
 
 (defun day24/input--eql (input value)
   (lexical-let ((value value))
-    (day24/input--operation input (lambda (x) (= x value)))))
+    (day24/input--operation input (lambda (x) (if (= x value) 1 0)))))
 
 (defun day24/input--eql-inputs (op1 op2)
   (day24/input--binary-operation op1 op2 (lambda (a b) (if (= a b) 1 0))))
