@@ -79,16 +79,9 @@
                   '(0 . 1)
                   (advent/v->l index))))
 
-(defun day24/compare-indices (a b)
-  (> (day24/index-to-magnitude a)
-     (day24/index-to-magnitude b)))
-
-(setq day24/debug-keep-copies nil)
-
 (defun day24/merge-indices (list1 list2)
-  (if day24/debug-keep-copies
-      (-uniq (append list1 list2))
-    (list (car (sort (-uniq (append list1 list2)) #'day24/compare-indices)))))
+  (-uniq (append list1 list2))
+   )
 
 (defun day24/reduce-values (values)
   "merge the indices together"
@@ -327,7 +320,7 @@
 
 (defun day24/create-i2v (count var-index start-value)
   (let ((indices (make-vector count nil)))
-    (aset indices var-index start-value)
+    (aset indices var-index (list start-value))
     indices))
 
 (defun day24/starting-input-data (count var-index)
