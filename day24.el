@@ -51,21 +51,28 @@
   (lexical-let ((value value))
     (day24/input--operation input (lambda (x) (* x value)))))
 
+(defun day24/input--mul-inputs (op1 op2)
+  (day24/input--binary-operation op1 op2 #'*))
+
+
 (defun day24/mul--a-b (op1 op2)
-  (if (numberp op1)
-      (cond
-       ((zerop op1) 0)
-       ((= op1 1) op2)
-       ((numberp op2) (* op1 op2))
-       ((day24/is-input? op2) (day24/input--mul op2 op1))       
-       (t (list #'* op1 op2)))
-    (if (numberp op2)
+  (if (and (day24/is-input? op1)
+           (day24/is-input? op2))
+      (day24/input--mul-inputs op1 op2)
+    (if (numberp op1)
         (cond
-         ((zerop op2) 0)
-         ((= op2 1) op1)
-         ((day24/is-input? op1) (day24/input--mul op1 op2))                
-         (t (list #'* op2 op1)))
-      (list #'* op2 op1))))
+         ((zerop op1) 0)
+         ((= op1 1) op2)
+         ((numberp op2) (* op1 op2))
+         ((day24/is-input? op2) (day24/input--mul op2 op1))       
+         (t (list #'* op1 op2)))
+      (if (numberp op2)
+          (cond
+           ((zerop op2) 0)
+           ((= op2 1) op1)
+           ((day24/is-input? op1) (day24/input--mul op1 op2))                
+           (t (list #'* op2 op1)))
+        (list #'* op2 op1)))))
 
 (defun day24/mul (alu op1 op2)
   (day24/binary-operation alu #'day24/mul--a-b op1 op2))
@@ -129,7 +136,6 @@
       (if (numberp op2)
           (cond
            ((zerop op2) op1)
-           ((= op2 1) op1)
            ((day24/is-input? op1) (day24/input--add op1 op2))
            (t (list #'+ op2 op1)))
         (list #'+ op2 op1)))))
@@ -171,22 +177,30 @@
     (day24/input--operation input (lambda (x) (if (not (zerop value))
                                                   (/ x value))))))
 
+(defun day24/safe-division-2 (x y)
+  (unless (zerop y)
+    (truncate (/ x y))))
+
+(defun day24/input--div-inputs (op1 op2)
+  (day24/input--binary-operation op1 op2 #'day24/safe-division-2))
 
 (defun day24/div--a-b (op1 op2)
   (when (and (numberp op2) (= op2 0))
-    (error "Zero divisor"))
-  (if (numberp op1)
-      (cond
-       ((zerop op1) 0)
-       ((numberp op2) (truncate (/ op1 op2)))
-       (t (list #'truncate (list #'/ op1 op2))))
-    (if (numberp op2)
-        (cond
-         ((= op2 1) op1)
-         ((numberp op1) (truncate (/ op1 op2)))
-         ((day24/is-input? op1) (day24/input--div op1 op2))
-         (t (list #'truncate (list #'/ op1 op2))))
-      (list #'truncate (list #'/ op1 op2)))))
+    nil)
+  (if (and (day24/is-input? op1) (day24/is-input? op2))
+      (day24/input--div-inputs op1 op2)
+   (if (numberp op1)
+       (cond
+        ((zerop op1) 0)
+        ((numberp op2) (truncate (/ op1 op2)))
+        (t (list #'truncate (list #'/ op1 op2))))
+     (if (numberp op2)
+         (cond
+          ((= op2 1) op1)
+          ((numberp op1) (truncate (/ op1 op2)))
+          ((day24/is-input? op1) (day24/input--div op1 op2))
+          (t (list #'truncate (list #'/ op1 op2))))
+       (list #'truncate (list #'/ op1 op2))))))
 
 (defun day24/div (alu op1 op2)
   (day24/binary-operation alu #'day24/div--a-b op1 op2))
@@ -322,6 +336,8 @@
                               (day24/create-inputs input-count))
                         instructions)))
     ;; I expect all inputs to be consumed
+    (print "RESULT ready!")
+    (redisplay)
     (car alu-inputs)))
 
 (defun day24/simplify-all-z (input-count instructions)
