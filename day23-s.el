@@ -81,7 +81,7 @@
               (paths (cadr block)))
           (--each paths
             (progn
-              (print (format "%s -> %s"(cons start (car (reverse it))) it))
+              ;(print (format "%s -> %s"(cons start (car (reverse it))) it))
               (advent/put table
                          (cons start (car (reverse it)))
                          it))))))
@@ -117,7 +117,7 @@
     (maphash (lambda (src-dst other-cells) 
                (let* ((all-steps (--map (cons (car it) (cadr it))  (-partition-in-steps 2 1 (cons (car src-dst) other-cells))))
                       (move-cost (apply #'+ (--map (advent/get day23-s/double--cost-moves it 1) all-steps))))
-                 (print (format "%s -> %s (%s)" src-dst move-cost all-steps))
+                 ;(print (format "%s -> %s (%s)" src-dst move-cost all-steps))
                  (advent/put all-costs src-dst move-cost)))
              from-to)
     all-costs))
