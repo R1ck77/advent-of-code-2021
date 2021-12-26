@@ -158,7 +158,7 @@
                               (:add (list symbol (cadr-value)))
                               (t (error (format "Unexpected zero operation for %s" value)))))
                           (day24/select-expr (lambda (symbol value)
-                                               (and (numberp (elt value 2)) (zerop (elt value 2))))
+                                               (and (listp value) (numberp (elt value 2)) (zerop (elt value 2))))
                                              state)))
 
 (defun day24/part-1 (lines)
