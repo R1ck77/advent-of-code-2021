@@ -64,14 +64,14 @@
          ((= op1 1) op2)
          ((numberp op2) (* op1 op2))
          ((day24/is-input? op2) (day24/input--mul op2 op1))       
-         (t (list #'* op1 op2)))
+         (t (error (format "Unresolved operation: * %s %s" op1 op2))))
       (if (numberp op2)
           (cond
            ((zerop op2) 0)
            ((= op2 1) op1)
            ((day24/is-input? op1) (day24/input--mul op1 op2))                
-           (t (list #'* op2 op1)))
-        (list #'* op2 op1)))))
+           (t (error (format "Unresolved operation: * %s %s" op1 op2))))
+        (error (format "Unresolved operation: * %s %s" op1 op2))))))
 
 (defun day24/mul (alu op1 op2)
   (day24/binary-operation alu #'day24/mul--a-b op1 op2))
@@ -262,13 +262,15 @@
                         (if new-value ; discard nil values!
                             (push (list new-value new-index) results))))))))
     (day24/reduce-input
-     (list :name (concat (plist-get op1 :name)
-                         ":"
-                         (plist-get op2 :name))
+     (list :name (s-truncate 10 (concat (plist-get op1 :name)
+                          ":"
+                          (plist-get op2 :name)) "…")
            :value (day24/roll--value results)))))
 
-;; TODO/FIXME wrong
-;; This is probably the simplest binary operation
+(defun day24/input--eql (input value)
+  (lexical-let ((value value))
+    (day24/input--operation input (lambda (x) (= x value)))))
+
 (defun day24/input--eql-inputs (op1 op2)
   (day24/input--binary-operation op1 op2 (lambda (a b) (if (= a b) 1 0))))
 
@@ -277,8 +279,9 @@
    ((and (numberp op1) (numberp op2)) (if (= op1 op2) 1 0))
    ((and (day24/is-input? op1) (day24/is-input? op2))
     (day24/input--eql-inputs op1 op2))
-   ;; missing single value equal?
-   (t (list #'equal op1 op2))))
+   ((and (day24/is-input? op1) (numberp op2)) (day24/input--eql op1 op2))
+   ((and (day24/is-input? op2) (numberp op1)) (day24/input--eql op2 op1))
+   (t (error (format "Unhandled: eql %s %s" op1 op2)))))
 
 (defun day24/eql (alu op1 op2)
   (day24/binary-operation alu #'day24/eql--a-b op1 op2))
