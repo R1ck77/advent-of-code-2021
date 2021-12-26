@@ -67,12 +67,16 @@
         :input (plist-get state :input)))
 
 (defun day24/to-string (state)
-  (let ((result ""))
+  (let ((result "")
+        (ranges (day24/compute-ranges state)))
     (setq result (concat result (format "* INDICES: %s\n" (plist-get state :indices))))
     (setq result (concat result (format "* NEXT SERVED: %d\n" (plist-get state :input))))
     (setq result (concat result "* DICTIONARY:\n"))
     (maphash (lambda (symbol value)
-               (setq result (concat result (format "  %s := %s\n" symbol value))))
+               (setq result (concat result
+                                    (if-let ((range (advent/get ranges symbol)))
+                                        (format "%-40s %s\n" (format "  %s := %s" symbol value) range)
+                                      (format "  %s := %s\n" symbol value)))))
              (plist-get state :expressions))
     result))
 
@@ -331,14 +335,17 @@ Possibly replace expressions with their numerical value"
 (defun day24/simplify-once (state)
   (day24/replace-once (day24/resolve-obvious-input-opertions (day24/resolve-special-values state))))
 
+(defun day24/same-tables? (table-a table-b)
+  (and (= (hash-table-count table-a) (hash-table-count table-b))
+       (not (--any (let ((a-value (advent/get table-a it))
+                         (b-value (advent/get table-b it)))
+                     (not (equal a-value b-value)))
+                   (hash-table-keys table-a)))))
+
 (defun day24/same-expressions? (state-a state-b)
   (let ((expr-a (plist-get state-a :expressions))
         (expr-b (plist-get state-b :expressions)))
-    (and (= (hash-table-count expr-a) (hash-table-count expr-b))
-         (not (--any (let ((a-value (advent/get expr-a it))
-                           (b-value (advent/get expr-b it)))
-                       (not (equal a-value b-value)))
-                     (hash-table-keys expr-a))))))
+    (day24/same-tables? expr-a expr-b)))
 
 (defun day24/simplify-until-converged (state)
   (let ((new-state (day24/simplify-once state)))
@@ -347,6 +354,96 @@ Possibly replace expressions with their numerical value"
       (setq state new-state)
       (setq new-state (day24/simplify-once state)))
     new-state))
+
+(defun day24/resolve--indirect-range (state ranges symbol)
+  "If a symbol can be resolved through indirection return that, otherwise nil"
+  (if-let ((next-symbol (advent/get (plist-get state :expressions) symbol)))
+      (if-let ((next-range (advent/get ranges next-symbol)))
+          next-range
+        ;; This sort of works by chance: you can't look up expressions or numbers so it's fine
+        (day24/resolve--indirect-range state ranges next-symbol))))
+
+(defun day24/tdiv (a b)
+  (truncate (/ a b)))
+
+(defun day24/get-range-if-any (ranges symbol)
+  
+  ())
+
+(defun day24/resolve-range (value)
+  "Returns a range for a value, or nil if the value can't be immediately resolved"
+  (cond
+   ((numberp value) (vector value value))
+   ((day24/is-input? value) (vector 1 9))
+   ((and (listp value) (eq (car value) :eql)) (vector 0 1))
+   ((and (listp value) (eq (car value) :mod)) (vector 0 (1- (elt value 2))))))
+
+(defun day24/try--hard-for-range (state ranges unspec-value)
+  (or (day24/resolve-range unspec-value)
+      (day24/resolve--indirect-range state ranges unspec-value)))
+
+(defun day24/resolve--add-range (state ranges value)
+  (if-let ((op1-range (day24/try--hard-for-range state ranges (elt value 1)))
+           (op2-range (day24/try--hard-for-range state ranges (elt value 2))))
+      (vector (+ (aref op1-range 0)
+                 (aref op2-range 0))
+              (+ (aref op1-range 1)
+                 (aref op2-range 1)))))
+
+(defun day24/resolve--mul-range (state ranges value))
+
+(defun day24/step-ranges (state ranges)
+  (maphash (lambda (symbol value)
+             (cond
+              ;; numbers are a 1 value range
+              ((numberp value)
+               (advent/put ranges symbol (day24/resolve-range value)))
+              ;; inputs are between 1 and 9 included
+              ((day24/is-input? value)
+               (advent/put ranges symbol (day24/resolve-range value)))
+              ;; symbols that are not inputs could be in theory resolved from the reference
+              ;; since the connection is not necessarily resolved in the expressions
+              ((symbolp value) (if-let ((range (day24/resolve--indirect-range state ranges value)))
+                                   (advent/put ranges symbol range)))
+              ;; equals are always 0 or 1
+              ((and (listp value) (eq (car value) :eql))
+               (advent/put ranges symbol (day24/resolve-range value)))
+              ;; mod compresses the results between 0 and the (divisor - 1)
+              ((and (listp value) (eq (car value) :mod))
+               (advent/put ranges symbol (day24/resolve-range value)))
+              ;; div has always a second numeric operator and reduces a previous range, if available
+              ((and (listp value)
+                    (eq (car value) :div))
+               (if-let ((op1-range (day24/resolve--indirect-range state ranges (elt value 1))))
+                   (advent/put ranges symbol (vector (day24/tdiv (aref op1-range 0))
+                                                     (day24/tdiv (aref op1-range 1))))))
+              ;; add
+              ((and (listp value) (eq (car value) :add))
+               (if-let ((range (day24/resolve--add-range state ranges value)))
+                   (advent/put ranges symbol range)))
+              ;; mul
+              ((and (listp value) (eq (car value) :mul))
+               (if-let ((range (day24/resolve--mul-range state ranges value)))
+                   (advent/put ranges symbol range)))))
+           (plist-get state :expressions))
+  ranges)
+
+(defun day24/to-string-r (ranges)
+  (let ((result ""))
+    (setq result (concat result "* RANGES:\n"))
+    (maphash (lambda (symbol value)
+               (setq result (concat result (format "  %s := %s\n" symbol value))))
+             ranges)
+    result))
+
+(defun day24/compute-ranges (state)
+  "Create a db of obvious ranges for the expressions"
+  (let* ((ranges (advent/table))
+         (new-ranges (day24/step-ranges state ranges)))
+    (while (not (day24/same-tables? new-ranges ranges))
+      (setq ranges new-ranges)
+      (setq new-ranges (day24/step-ranges state ranges)))
+    new-ranges))
 
 (defun day24/part-1 (lines)
   (error "Not yet implemented"))
