@@ -332,29 +332,6 @@ Possibly replace expressions with their numerical value"
                             (t (error (format "Unhandled value: %s" value)))))
                          state))
 
-(defun day24/simplify-once (state)
-  (day24/replace-once (day24/resolve-obvious-input-opertions (day24/resolve-special-values state))))
-
-(defun day24/same-tables? (table-a table-b)
-  (and (= (hash-table-count table-a) (hash-table-count table-b))
-       (not (--any (let ((a-value (advent/get table-a it))
-                         (b-value (advent/get table-b it)))
-                     (not (equal a-value b-value)))
-                   (hash-table-keys table-a)))))
-
-(defun day24/same-expressions? (state-a state-b)
-  (let ((expr-a (plist-get state-a :expressions))
-        (expr-b (plist-get state-b :expressions)))
-    (day24/same-tables? expr-a expr-b)))
-
-(defun day24/simplify-until-converged (state)
-  (let ((new-state (day24/simplify-once state)))
-    (while (not (day24/same-expressions? state new-state))
-      (print "*")
-      (setq state new-state)
-      (setq new-state (day24/simplify-once state)))
-    new-state))
-
 (defun day24/resolve--indirect-range (state ranges symbol)  
   "If a symbol can be resolved through indirection return that, otherwise nil"
   (if-let ((range (advent/get ranges symbol)))
@@ -421,7 +398,7 @@ Possibly replace expressions with their numerical value"
                ;; div has always a second numeric operator and reduces a previous range, if available
                ((and (listp value)
                      (eq (car value) :div))
-                (if-let ((op1-range (day24/resolve--indirect-range state ranges (elt value 1))))
+                (if-let ((op1-range (day24/try--hard-for-range state ranges (elt value 1))))
                     (advent/put ranges symbol (vector (day24/tdiv (aref op1-range 0) (elt value 2))
                                                       (day24/tdiv (aref op1-range 1) (elt value 2))))))
                ;; add
@@ -451,6 +428,52 @@ Possibly replace expressions with their numerical value"
       (setq ranges new-ranges)
       (setq new-ranges (day24/step-ranges state ranges)))
     new-ranges))
+
+(defun day24/no-range-intersection? (range1 range2)
+  (or (> (aref range1 0) (aref range2 1))
+      (> (aref range2 0) (aref range1 1))))
+
+(defun day24/simplify-by-range (state)
+  "Compute the ranges and then try to resolve all equals"
+  (let ((ranges (day24/compute-ranges state)))
+    (day24/update-selection (lambda (symbol value)                              
+                              (if-let ((op1-range (day24/try--hard-for-range state ranges (elt value 1)))
+                                       (op2-range (day24/try--hard-for-range state ranges (elt value 2))))
+                                  ;; I can calculate the ranges                                  
+                                  (if (day24/no-range-intersection? op1-range op2-range)
+                                      ;; and there is no way they match an eql
+                                      (list symbol 0)
+                                    ;; there is even a slim intersection: we can't resolve the eql
+                                    (list symbol value))
+                                ;; I can't calculate the range (yet)
+                                (list symbol value)))
+                            (day24/select-expr (lambda (symbol value)
+                                                 (and (listp value) (eq (car value) :eql)))
+                                               state))))
+
+(defun day24/simplify-once (state)
+  (day24/simplify-by-range (day24/replace-once (day24/resolve-obvious-input-opertions (day24/resolve-special-values state)))))
+
+(defun day24/same-tables? (table-a table-b)
+  (and (= (hash-table-count table-a) (hash-table-count table-b))
+       (not (--any (let ((a-value (advent/get table-a it))
+                         (b-value (advent/get table-b it)))
+                     (not (equal a-value b-value)))
+                   (hash-table-keys table-a)))))
+
+(defun day24/same-expressions? (state-a state-b)
+  (let ((expr-a (plist-get state-a :expressions))
+        (expr-b (plist-get state-b :expressions)))
+    (day24/same-tables? expr-a expr-b)))
+
+(defun day24/simplify-until-converged (state)
+  (let ((new-state (day24/simplify-once state)))
+    (while (not (day24/same-expressions? state new-state))
+      (print "*")
+      (setq state new-state)
+      (setq new-state (day24/simplify-once state)))
+    new-state))
+
 
 (defun day24/part-1 (lines)
   (error "Not yet implemented"))
