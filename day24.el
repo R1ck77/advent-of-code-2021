@@ -93,6 +93,7 @@
       (list :name (plist-get input :name)
             :value new-values))))
 
+;;; TODO/FIXME remove nil?
 (defun day24/operate--vector (values cell-operation)
   "Returns a new vector"
   (--reduce-from (append acc
@@ -112,20 +113,26 @@
   (lexical-let ((value value))
     (day24/input--operation input (lambda (x) (+ x value)))))
 
+(defun day24/input--add-inputs (op1 op2)
+  (day24/input--binary-operation op1 op2 (lambda (a b) (+ a b))))
+
+
 (defun day24/add--a-b (op1 op2)
-  (if (numberp op1)
+  (if (and (day24/is-input? op1) (day24/is-input? op2))
+      (day24/input--add-inputs op1 op2)
+    (if (numberp op1)
         (cond
          ((zerop op1) op2)
          ((numberp op2) (+ op1 op2))
          ((day24/is-input? op2) (day24/input--add op2 op1))
          (t (list #'+ op1 op2)))
-    (if (numberp op2)
-        (cond
-         ((zerop op2) op1)
-         ((= op2 1) op1)
-         ((day24/is-input? op1) (day24/input--add op1 op2))
-         (t (list #'+ op2 op1)))
-      (list #'+ op2 op1))))
+      (if (numberp op2)
+          (cond
+           ((zerop op2) op1)
+           ((= op2 1) op1)
+           ((day24/is-input? op1) (day24/input--add op1 op2))
+           (t (list #'+ op2 op1)))
+        (list #'+ op2 op1)))))
 
 (defun day24/add (alu op1 op2)
   (day24/binary-operation alu #'day24/add--a-b op1 op2))
@@ -159,6 +166,12 @@
 (defun day24/mod (alu op1 op2)
   (day24/binary-operation alu #'day24/mod--a-b op1 op2)  )
 
+(defun day24/input--div (input value)
+  (lexical-let ((value value))
+    (day24/input--operation input (lambda (x) (if (not (zerop value))
+                                                  (/ x value))))))
+
+
 (defun day24/div--a-b (op1 op2)
   (when (and (numberp op2) (= op2 0))
     (error "Zero divisor"))
@@ -171,6 +184,7 @@
         (cond
          ((= op2 1) op1)
          ((numberp op1) (truncate (/ op1 op2)))
+         ((day24/is-input? op1) (day24/input--div op1 op2))
          (t (list #'truncate (list #'/ op1 op2))))
       (list #'truncate (list #'/ op1 op2)))))
 
@@ -235,11 +249,13 @@
                     (unless (day24/any--conflicting-indices? i1 i2)
                       (let ((new-index (day24/merge--indices i1 i2))
                             (new-value (funcall f v1 v2)))
-                        (push (list new-value new-index) results)))))))
-    (list :name (concat (plist-get op1 :name)
-                        ":"
-                        (plist-get op2 :name))
-          :value (day24/roll--value results))))
+                        (if new-value ; discard nil values!
+                            (push (list new-value new-index) results))))))))
+    (day24/reduce-input
+     (list :name (concat (plist-get op1 :name)
+                         ":"
+                         (plist-get op2 :name))
+           :value (day24/roll--value results)))))
 
 ;; TODO/FIXME wrong
 ;; This is probably the simplest binary operation
@@ -247,20 +263,12 @@
   (day24/input--binary-operation op1 op2 (lambda (a b) (if (= a b) 1 0))))
 
 (defun day24/eql--a-b (op1 op2)
-  (if (and (numberp op1) (numberp op2))
-      ;; both are number
-      (if (= op1 op2) 1 0)
-    (if (and (day24/is-input? op1) (day24/is-input? op2))
-        (day24/input--eql-inputs op1 op2)
-     (if (or (and (day24/illegal-input-value? op1) (day24/is-input? op2))
-             (and (day24/illegal-input-value? op2) (day24/is-input? op1)))
-         ;; an input value can't be like that!
-         0
-       (if (equal op1 op2)
-           ;; same expression. Must be equal
-           1
-         ;; different expression. Could be equal
-         (list #'equal op1 op2))))))
+  (cond
+   ((and (numberp op1) (numberp op2)) (if (= op1 op2) 1 0))
+   ((and (day24/is-input? op1) (day24/is-input? op2))
+    (day24/input--eql-inputs op1 op2))
+   ;; missing single value equal?
+   (t (list #'equal op1 op2))))
 
 (defun day24/eql (alu op1 op2)
   (day24/binary-operation alu #'day24/eql--a-b op1 op2))
@@ -330,6 +338,9 @@
 (defun read-programX (text)
   (day24/read-opcodes (split-string text "\n" t)))
 
+(defun simplify-program (inputs p)
+  (day24/simplify-all inputs (read-programX p)))
+
 (setq example (day24/read-opcodes (advent/read-problem-lines 24 :problem)))
 (setq negate (read-programX "inp x
 mul x -1"))
@@ -337,4 +348,14 @@ mul x -1"))
 inp x
 mul z 3
 eql z x"))
-
+(setq binary (read-programX "inp w
+add z w
+mod z 2
+div w 2
+add y w
+mod y 2
+div w 2
+add x w
+mod x 2
+div w 2
+mod w 2"))
