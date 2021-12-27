@@ -521,8 +521,31 @@ Possibly replace expressions with their numerical value"
                   (setq next (1- next)))
                 )
             (setq next (1- next)))))
+      ;; clear the subree
+      (--each (number-sequence 1 9)        
+        (remhash (cons it variables) cache))
       (print solved)
       solved)))
+
+(defun day24/resolve-operator (operator)
+  (case operator
+    (:add '+)
+    (:mul '*)
+    (:div 't/)
+    (:mod '%)
+    (:eql 'mod)))
+
+(defun day24/resolve-expression (state value)
+  (let ((expressions (plist-get state :expressions)))
+   (cond
+    ((numberp value) value)
+    ((symbolp value) (if-let ((next-symbol (advent/get expressions value)))
+                         (day24/resolve-expression state next-symbol)
+                       value))
+    ((listp value) (list (day24/resolve-operator (car value))
+                         (day24/resolve-expression state (elt value 1))
+                         (day24/resolve-expression state (elt value 2))))
+    (t (error (format "Did I miss something? %s" value))))))
 
 
 
@@ -532,6 +555,9 @@ Possibly replace expressions with their numerical value"
 
 (defun day24/part-2 (lines)
   (error "Not yet implemented"))
+
+(setq max-lisp-eval-depth 10000)
+(setq max-specpdl-size 100000)
 
 
 (provide 'day24)
