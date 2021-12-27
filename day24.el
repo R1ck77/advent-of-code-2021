@@ -559,7 +559,42 @@ Possibly replace expressions with their numerical value"
         (setq list (cons value list))    
         (let ((right-hand-list (day24/print-as-list state (elt value 1) '()))
               (left-hand-list (day24/print-as-list state (elt value 2) '())))
-         (append right-hand-list left-hand-list list)))))))
+          (append right-hand-list left-hand-list list)))))))
+
+(defun day24/eql (a b)
+  (if (= a b) 1 0))
+
+(defun day24/next-instruction (op inputs registers)
+  "Returns a list"
+  (if (eq (car op) :inp)
+      (progn 
+        (setq registers (plist-put registers (cadr op) (pop inputs)))
+        (list :inputs inputs :registers registers))
+    (let* ((op1 (elt op 1))
+           (op1-value (plist-get registers op1))
+           (op2 (or (plist-get registers (elt op 2)) (elt op 2))))
+      (list :inputs inputs
+            :registers (plist-put registers op1 (case (car op)
+                                                  (:add (+ op1-value op2))
+                                                  (:mul (* op1-value op2))
+                                                  (:eql (day24/eql op1-value op2))
+                                                  (:div (truncate (/ op1-value op2)))
+                                                  (:mod (mod op1-value op2))
+                                                  (t (error "Unexpected operation"))))))))
+
+(defun day24/evaluate-program (program inputs &optional w x y z)
+  (let ((registers (list :x (or x 0)
+                         :y (or y 0)
+                         :z (or z 0)
+                         :w (or w 0))))
+    (--reduce-from (day24/next-instruction it (plist-get acc :inputs) (plist-get acc :registers))
+                   (list :inputs inputs
+                         :registers registers)
+                   program)))
+
+(defun day24/evaluate-lines (lines inputs &optional x y z w)
+  (day24/evaluate-program (day24/read-opcodes lines) inputs w x y z)
+)
 
 
 (defun day24/part-1 (lines)
@@ -568,12 +603,8 @@ Possibly replace expressions with their numerical value"
 (defun day24/part-2 (lines)
   (error "Not yet implemented"))
 
-(setq max-lisp-eval-depth 10000)
-(setq max-specpdl-size 100000)
-
 
 (provide 'day24)
-
 
 (defun read-programX (text)
   (day24/read-opcodes (split-string text "\n" t)))
