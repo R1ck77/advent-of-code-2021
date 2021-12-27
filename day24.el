@@ -606,6 +606,47 @@ Possibly replace expressions with their numerical value"
 
 (setq blocks (day24/read-as-blocks (advent/read-problem-lines 24 :problem)))
 
+(defun evaluate-5-for (pred)
+  (let ((code (apply #'append (-take 5 blocks)))
+        (results)
+        (inputs))
+    (loop for i13 from 9 downto 1 do
+          (loop for i12 from 9 downto 1 do
+                (loop for i11 from 9 downto 1 do
+                      (loop for i10 from 9 downto 1 do
+                            (loop for i9 from 9 downto 1 do
+                                  (let* ((inputs (list i13 i12 i11 i10 i9))
+                                         (result (day24/evaluate-program code inputs)))
+                                    (if (funcall pred (plist-get result :registers))
+                                        (push result results))))))))
+    results))
+
+(defvar day24/synthesized-blocks '((1 14 12)
+                                   (1 11 8)
+                                   (1 11 7)
+                                   (1 14 4)
+                                   (26 -11 4)  ; this can be =
+                                   (1 12 1)
+                                   (26 -1 10)  ; this can be =
+                                   (1 10 8)
+                                   (26 -3 12)  ; this can be = 
+                                   (26 -4 10)  ; this can be =
+                                   (26 -13 15) ; this can be = 
+                                   (26 -8 4)   ; this can be =
+                                   (1 13 10)
+                                   (26 -11 9))) ; this can be =
+
+(defun day24/block (input old-z A B C)
+  (let* ((inner-block (+ (mod old-z 26) B)))
+    (print (format "=? %s" (= inner-block input)))
+    (if (= inner-block input)
+        (/ old-z A)
+      (+ (* (/ old-z A) 26) input C))))
+
+(defun day24/run-block (index input z)
+  (apply #'day24/block (append (list input z) (elt day24/synthesized-blocks index))))
+
+
 (defun day24/part-1 (lines)
   (day24/search (advent/table) (day24/record-program (day24/read-opcodes lines)) nil))
 
