@@ -325,9 +325,9 @@ Possibly replace expressions with their numerical value"
                             ;; symbolic values may be
                             ((symbolp value)
                              (list symbol (day24/resolve--non-expression-symbol db value)))
-                            ;; inp by definition is not interesting
+                            ;; inp can't appear
                             ((eq (car value) :inp)
-                             (list symbol value))
+                             (error (format "unexpected ':inp'")))
                             ;; Lists are where the action is
                             ((listp value)
                              (list symbol (day24/resolve--list-value db value )))
@@ -547,7 +547,19 @@ Possibly replace expressions with their numerical value"
                          (day24/resolve-expression state (elt value 2))))
     (t (error (format "Did I miss something? %s" value))))))
 
-
+(defun day24/print-as-list (state symbol list)
+  (let* ((expression (plist-get state :expressions))
+         (value (advent/get expression symbol)))
+    (cond
+     ((day24/is-input? value) nil)
+     ((numberp value) nil)
+     ((not value) nil)
+     ((listp value)
+      (progn
+        (setq list (cons value list))    
+        (let ((right-hand-list (day24/print-as-list state (elt value 1) '()))
+              (left-hand-list (day24/print-as-list state (elt value 2) '())))
+         (append right-hand-list left-hand-list list)))))))
 
 
 (defun day24/part-1 (lines)
