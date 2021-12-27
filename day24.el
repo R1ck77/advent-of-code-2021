@@ -33,8 +33,11 @@
   (intern (concat ":" (plist-get day24/registers-base register)
                   (number-to-string index))))
 
+(defun day24/make-input (index)
+  (intern (format ":i%d" index)))
+
 (defun day24/current-input (state)
-  (intern (format ":i%d" (plist-get state :input))))
+  (day24/make-input (plist-get state :input)))
 
 (defun day24/current-symbol (state register)
   (day24/build-symbol register
@@ -469,14 +472,63 @@ Possibly replace expressions with their numerical value"
 (defun day24/simplify-until-converged (state)
   (let ((new-state (day24/simplify-once state)))
     (while (not (day24/same-expressions? state new-state))
-      (print "*")
       (setq state new-state)
       (setq new-state (day24/simplify-once state)))
     new-state))
 
+(defun day24/replace-symbol (value input-symbol input-value)  
+  (cond
+   ;; plain assignment
+   ((eq value input-symbol) input-value)
+   ;; list
+   ((listp value) (--map (day24/replace-symbol it input-symbol input-value) value))
+   ;; anything else
+   (t value)))
+
+(defun day24/set-input (state index input-value)
+  (let* ((new-state (day24/copy-state state))
+         (input-symbol (day24/make-input index))
+         (new-db (plist-get new-state :expressions)))
+    (maphash (lambda (symbol value)
+               (advent/put new-db symbol (day24/replace-symbol value input-symbol input-value)))
+             new-db)
+    new-state))
+
+(defun day24/force-input (state index input-value)
+  (day24/simplify-until-converged (day24/set-input state index input-value)))
+
+(defun day24/objective-feasible? (state)
+  (let* ((ranges (day24/compute-ranges state))
+         (z-goal (advent/get ranges :z0)))
+    (and (>= 0 (aref z-goal 0))
+         (<= 0 (aref z-goal 1)))))
+
+;; caching would be good
+(defun day24/search (cache state variables)
+  (print (format "Inside %s" variables))
+  (redisplay)
+  (if (= (length variables) 14)
+      variables
+    (let ((next 9)
+          (solved))
+      (while (and (not solved) (>= next 1))
+        (let ((forced-state (or (advent/get cache (cons next variables))
+                                (day24/force-input state (- 13 (length variables)) next))))
+          (advent/put cache (cons next variables) forced-state) ; won't hurt
+          (if (day24/objective-feasible? forced-state)
+              (let ((solved (day24/search cache forced-state (cons next variables))))
+                (unless solved
+                  (setq next (1- next)))
+                )
+            (setq next (1- next)))))
+      (print solved)
+      solved)))
+
+
+
 
 (defun day24/part-1 (lines)
-  (error "Not yet implemented"))
+  (day24/search (advent/table) (day24/record-program (day24/read-opcodes lines)) nil))
 
 (defun day24/part-2 (lines)
   (error "Not yet implemented"))
