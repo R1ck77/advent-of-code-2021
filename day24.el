@@ -594,8 +594,17 @@ Possibly replace expressions with their numerical value"
 
 (defun day24/evaluate-lines (lines inputs &optional x y z w)
   (day24/evaluate-program (day24/read-opcodes lines) inputs w x y z)
-)
+  )
 
+(defun day24/read-as-blocks (lines)
+  (nreverse
+   (-map #'nreverse (--reduce-from (if (eq (car it) :inp)
+                                       (cons (list it) acc)
+                                     (cons (cons it (car acc)) (rest acc)))
+                                   nil
+                                   (day24/read-opcodes lines)))))
+
+(setq blocks (day24/read-as-blocks (advent/read-problem-lines 24 :problem)))
 
 (defun day24/part-1 (lines)
   (day24/search (advent/table) (day24/record-program (day24/read-opcodes lines)) nil))
