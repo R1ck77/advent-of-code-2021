@@ -14,7 +14,9 @@ Just clone the repository: it doesn't require any setup at all.
 
 ** How to run the samples
 
-The code is organized in "day" files representing the solutions of each part of a specific day, each one contains 2 functions computing the solution for the first part and the second part, like:
+The code is organized in "day" files recomputing the solutions of each part of a specific day.
+
+Each dayX.el file contains 2 functions, one for each part of the day (at least for the problems that I managed to solve without manual intervention) like:
 
 #+begin_src elisp
 (day/part-1 blocks)
@@ -30,7 +32,7 @@ where the first require blocks of lines and the second a single list of lines.
 
 This inconsistency in the type of the argument was introduced for my convenience, anyway the input format is always simple and can be deducted from the argument name or the test:  it's usually lines, numbers or block of lines.
 
-There are buttercup tests that will run my solution for each day against the example provided with the description and my personal input.
+There are buttercup tests that will run my solution for each day against the example provided by the organizers and then my specific input.
 
 To run the tests which ensure that all solutions reproduce the expected results you can either type:
 
@@ -44,7 +46,15 @@ if you have make installed, otherwise you can execute:
 emacs --eval "(setq load-path (cons \".\" load-path))" -batch -f package-initialize -f buttercup-run-discover
 #+end_src
 
-*Keep in mind that some tests are rather slow*: due to the lack of sorted tables for instance, day 15 takes more than 10' on my machine and the whole suite may as well take almost an hour to execute, depending on the machine.
+*Keep in mind that some tests are very slow*: for instance - due to the lack of sorted tables - day 15 takes more than 10' on my machine. Also I didn't come back (yet) to optimize my solutions so, for instance, day 23 takes 3h and a half to run (which is why it's disabled…)
+
+Also, while the solutions are automatic (with the notable exception of day 24 which - as of now - is a mix of manual hacks and brute force decoding), *I cannot guarantee that they will work with any input*: I didn't sample try/other inputs, just mine, so I have no idea:
+
+- whether other inputs are quirkier than the ones I have
+- if they take faaaar longer to execute than mine
+- …or maybe if they touch my code in exactly the wrong ways and expose bugs I didn't notice
+
+so be forewarned.
 
 IF you want to execute a single test you can run:
 
@@ -79,6 +89,8 @@ Then you can do something like this:
 #+end_src
 
 But, obviously, if you are on this repository, you are the kind of /connoisseur/ who doesn't need detailed instructions… :)
+
+There are also print functions around that can be used to print board/grids and other stuff inside debug buffers (in this sense, having Emacs was kind of nice!).
 
 *** Day 5
 
