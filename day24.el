@@ -637,11 +637,131 @@ Possibly replace expressions with their numerical value"
                                    (26 -11 9))) ; this can be =
 
 (defun day24/block (input old-z A B C)
-  (let* ((inner-block (+ (mod old-z 26) B)))
-    (print (format "=? %s" (= inner-block input)))
+  "Returns a (triggered new-z) list"
+  (let* ((inner-block (+ (mod old-z 26) B)))    
     (if (= inner-block input)
-        (/ old-z A)
-      (+ (* (/ old-z A) 26) input C))))
+        (list t (/ old-z A))
+      (list nil (+ (* (/ old-z A) 26) input C)))))
+
+(defun day24/block-n (index input old-z)
+  (let ((block (elt day24/synthesized-blocks index)))
+    (day24/block input old-z
+                 (elt block 0)
+                 (elt block 1)
+                 (elt block 2))))
+
+(defun day24/execute-n-blocks (inputs &optional start start-z)
+  (-reduce-from (lambda (t-oldz index-input)
+                  (day24/block-n (+ (or start 0)
+                                    (car index-input))
+                                 (cdr index-input) (cadr t-oldz) ))
+                (list nil (or start-z 0))
+                (--map-indexed (cons it-index it) inputs)))
+
+
+(defun day24/execute-5-blocks (inputs)
+  (assert (= 5 (length inputs)))
+  (day24/execute-n-blocks inputs))
+
+(defun evaluate-5-triggered ()
+  "Return i9 i10 i11 i12 i13"
+  (let ((code (apply #'append (-take 5 blocks)))
+        (results)
+        (inputs))
+    (loop for i13 from 9 downto 1 do
+          (loop for i12 from 9 downto 1 do
+                (loop for i11 from 9 downto 1 do
+                      (loop for i10 from 9 downto 1 do
+                            (loop for i9 from 9 downto 1 do
+                                  (let* ((inputs (list i13 i12 i11 i10 i9))
+                                         (result (day24/execute-5-blocks inputs)))
+                                    (if (car result)
+                                        (push (list (nreverse inputs) result) results))))))))
+    results))
+
+;;; after 5 blocks z=14654 indices (big first):  9 9 9 9 2
+
+(defun evaluate-5-triggered ()
+  "Return i9 i10 i11 i12 i13"
+  (let ((code (apply #'append (-take 5 blocks)))
+        (results)
+        (inputs))
+    (loop for i13 from 9 downto 1 do
+          (loop for i12 from 9 downto 1 do
+                (loop for i11 from 9 downto 1 do
+                      (loop for i10 from 9 downto 1 do
+                            (loop for i9 from 9 downto 1 do
+                                  (let* ((inputs (list i13 i12 i11 i10 i9))
+                                         (result (day24/execute-5-blocks inputs)))
+                                    (if (car result)
+                                        (push (list (nreverse inputs) result) results))))))))
+    results))
+
+(defun add-layer (coordinates)
+  (let ((results ()))
+    (loop for i from 9 downto 1 do
+          (setq results (append results (--map (cons i it) coordinates))))
+    results))
+
+(defun grid-n (n)
+  (--reduce-from 
+   (add-layer acc)
+   (-map #'list (number-sequence 9 1 -1))
+   (number-sequence 1 (1- n)))  )
+
+(defun optimize-n (first-block n z)
+  (print (format "Optimizing blocks %s" (number-sequence first-block (+ first-block n))))
+  (redisplay)
+  (let* ((all-points (grid-n n)))
+    (nreverse (--filter (car (cadr it)) (--map (list it (day24/execute-n-blocks it first-block z)) all-points)))))
+
+(defun optimize-from-previous-results (previous first-block n)
+  (print (format "Optimizing* blocks %s" (number-sequence first-block (+ first-block n))))
+  (redisplay)
+  (let* ((new-points (grid-n n))
+         (results))
+    (--each previous
+      (let* ((old-indices (car it))
+             (old-z (cadr (cadr it))))
+        ;; only the 2 points coordinates here!
+        (let ((inner-results (--filter (car (cadr it))
+                                       (--map (list it (day24/execute-n-blocks it first-block old-z)) new-points))))
+          (-each (nreverse inner-results)
+            (lambda (inner-result)
+              (push (list (append old-indices (car inner-result))
+                          (cadr inner-result))
+                    results))))))
+    (nreverse results)))
+
+(defun optimize-it-all ()
+  (let* ((first-5-blocks (optimize-n 0 5 0))
+         (first-7-blocks (optimize-from-previous-results first-5-blocks 5 2))
+         (first-9-blocks (optimize-from-previous-results first-7-blocks 7 2))
+;         (first-10-blocks (optimize-from-previous-results first-9-blocks 8 1))
+;         (first-11-blocks (optimize-from-previous-results first-10-blocks 9 1))
+;         (first-12-blocks (optimize-from-previous-results first-11-blocks 10 1))
+;         (first-13-blocks (optimize-from-previous-results first-12-blocks 11 1))
+;         (first-14-blocks (optimize-from-previous-results first-13-blocks 12 2))
+         )
+    first-9-blocks))
+
+(defun next-2combinations (old-z i7 i8)
+  (day24/block-n 6 i7 (cadr (day24/block-n 5 i8 old-z))))
+
+;;; after 2 extra blocks z= 14654 indices 9 9 9 9 2 9 9
+
+(defun next-2-2-combinations (old-z i5 i6)
+  (day24/block-n 8 i5 (cadr (day24/block-n 7 i6 old-z))))
+
+(defun best-next2 ()
+  (let ((results))
+    (loop for i5 from 9 downto 1 do
+          (loop for i6 from 9 downto 1 do
+                (let ((result (next-2-2-combinations 14654 i5 i6)))
+                  (if (car results)
+                      (push (list (list i6 i5) result) results)))))
+    results))
+
 
 (defun day24/run-block (index input z)
   (apply #'day24/block (append (list input z) (elt day24/synthesized-blocks index))))
@@ -660,20 +780,3 @@ Possibly replace expressions with their numerical value"
   (day24/read-opcodes (split-string text "\n" t)))
 (setq example (day24/read-opcodes (advent/read-problem-lines 24 :problem)))
 
-(setq negate (read-programX "inp x
-mul x -1"))
-(setq triple (read-programX "inp z
-inp x
-mul z 3
-eql z x"))
-(setq binary (read-programX "inp w
-add z w
-mod z 2
-div w 2
-add y w
-mod y 2
-div w 2
-add x w
-mod x 2
-div w 2
-mod w 2"))
