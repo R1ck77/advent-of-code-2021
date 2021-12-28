@@ -79,7 +79,7 @@ v>.......>
 .vv>....v>
 .>v.vv.v.."))
 
-(describe "Day 25"
+(describe "--- Day 25: Sea Cucumber ---"
   (describe "part 1"
     (describe "example-steps"
       (it "replicates step 0"
