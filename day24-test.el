@@ -3,13 +3,10 @@
 
 (describe "--- Day 24: Arithmetic Logic Unit ---"
   (describe "part 1"
-    (it "solves the problem"
+    (it "solves the problem    ⚠ semi-manual hack"
       (expect (day24/part-1 (advent/read-problem-lines 24 :problem))
-              :to-be 42)))
-  (xdescribe "part 2"
-    (it "replicates the example"
-      (expect (day24/part-2 (advent/read-problem-lines 24 :example))
-              :to-be 42))
-    (xit "solves the problem"
+              :to-be 59692994994998)))
+  (describe "part 2"
+    (it "solves the problem    ⚠ semi-manual hack"
       (expect (day24/part-2 (advent/read-problem-lines 24 :problem))
-              :to-be 42))))
+              :to-be 16181111641521))))

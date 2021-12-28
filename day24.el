@@ -720,7 +720,7 @@ Possibly replace expressions with their numerical value"
                       all-points)))))
 
 (defun optimize-from-previous-results (previous first-block n)
-  (print (format "Optimizing* blocks %s" (number-sequence first-block (1- (+ first-block n)))))
+  (print (format "Optimizing blocks %s" (number-sequence first-block (1- (+ first-block n)))))
   (redisplay)
   (let* ((new-points (grid-n n))
          (results))
@@ -737,60 +737,29 @@ Possibly replace expressions with their numerical value"
               (push (list (append old-indices (car inner-result))
                           (cadr inner-result))
                     results))))))
-    (print (format "%d results" (length results)))
-    (print (format "First result %s" (car results)))
-    (print (format "Last result %s" (car (last results))))
-    (redisplay)
     (nreverse results)))
 
 (defun optimize-it-all ()
+  "Returns the smallest and largest solution"
   (let* ((first-5-blocks (optimize-n 0 5 0))
          (first-7-blocks (optimize-from-previous-results first-5-blocks 5 2))
          (first-9-blocks (optimize-from-previous-results first-7-blocks 7 2))
          (first-10-blocks (optimize-from-previous-results first-9-blocks 9 1))
          (first-11-blocks (optimize-from-previous-results first-10-blocks 10 1))
          (first-12-blocks (optimize-from-previous-results first-11-blocks 11 1))
-         (first-13-blocks (optimize-from-previous-results first-12-blocks 12 2))
-         )
-;;    (-take 10 first-11-blocks)
-    first-13-blocks
-    ))
-
-;; To verify: (day24/evaluate-program (apply #'append (-take 5 blocks)) '(9 9 9 9 2))
-;; Also: (day24/execute-n-blocks '(9 9 9 9 2))
-
-(defun next-2combinations (old-z i7 i8)
-  (day24/block-n 6 i7 (cadr (day24/block-n 5 i8 old-z))))
-
-;;; after 2 extra blocks z= 14654 indices 9 9 9 9 2 9 9
-
-(defun next-2-2-combinations (old-z i5 i6)
-  (day24/block-n 8 i5 (cadr (day24/block-n 7 i6 old-z))))
-
-(defun best-next2 ()
-  (let ((results))
-    (loop for i5 from 9 downto 1 do
-          (loop for i6 from 9 downto 1 do
-                (let ((result (next-2-2-combinations 14654 i5 i6)))
-                  (if (car results)
-                      (push (list (list i6 i5) result) results)))))
-    results))
-
-
-(defun day24/run-block (index input z)
-  (apply #'day24/block (append (list input z) (elt day24/synthesized-blocks index))))
-
+         (first-13-blocks (optimize-from-previous-results first-12-blocks 12 2)))
+    (list (caar first-13-blocks)
+          (caar (last first-13-blocks)))))
 
 (defun day24/part-1 (lines)
-  (day24/search (advent/table) (day24/record-program (day24/read-opcodes lines)) nil))
+  (string-to-number
+   (apply #'concat
+          (-map #'number-to-string (cadr (optimize-it-all))))))
 
 (defun day24/part-2 (lines)
-  (error "Not yet implemented"))
-
+  (string-to-number
+   (apply #'concat
+          (-map #'number-to-string (car (optimize-it-all))))))
 
 (provide 'day24)
-
-(defun read-programX (text)
-  (day24/read-opcodes (split-string text "\n" t)))
-(setq example (day24/read-opcodes (advent/read-problem-lines 24 :problem)))
 
